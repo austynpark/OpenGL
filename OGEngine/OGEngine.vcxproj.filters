@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\OG">
+      <UniqueIdentifier>{ee0a027f-5a18-4b8a-9238-11186d1df12b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OG\source">
+      <UniqueIdentifier>{45835546-464f-4283-8397-06dc4b16de72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders">
+      <UniqueIdentifier>{a5a629a4-7e12-425f-8778-5925d0eecdd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\application">
+      <UniqueIdentifier>{94a0306c-d051-4a58-babe-bfe352e555e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OG\scenes">
+      <UniqueIdentifier>{9bd575de-85c5-410a-ac29-f17068deeeba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\models">
+      <UniqueIdentifier>{800d5292-c288-44a6-8340-a03ce99a128a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui">
+      <UniqueIdentifier>{ee5ea49a-d3f2-4cca-896c-4e486af4ebc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui\src">
+      <UniqueIdentifier>{ceb98405-5b9b-4239-a807-2f7d98ebc940}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="OG\src\Graphics.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\Mesh.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\OBJReader.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\ogpch.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\Scene.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\shader.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\glad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\include\imgui\imgui_draw.cpp">
+      <Filter>Source Files\imgui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\include\imgui\imgui_impl_glfw.cpp">
+      <Filter>Source Files\imgui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\include\imgui\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\imgui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\include\imgui\imgui_tables.cpp">
+      <Filter>Source Files\imgui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\include\imgui\imgui_widgets.cpp">
+      <Filter>Source Files\imgui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\include\imgui\imgui.cpp">
+      <Filter>Source Files\imgui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\include\imgui\imgui_demo.cpp">
+      <Filter>Source Files\imgui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\GLApplication.cpp">
+      <Filter>Source Files\application</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\scenes\Scene_Assignment1.cpp">
+      <Filter>Source Files\OG\scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\Model.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\BufferObject.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\ArrayBufferObject.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\Camera.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\Object.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\UniformBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="OG\Mesh.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\OBJReader.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\shader.hpp">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\Graphics.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\ogpch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\Scene.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imgui.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imconfig.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imgui_impl_glfw.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imgui_impl_opengl3.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imgui_impl_opengl3_loader.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imgui_internal.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imstb_rectpack.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imstb_textedit.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\include\imgui\imstb_truetype.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\scenes\Scene_Assignment1.h">
+      <Filter>Source Files\OG\scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\Model.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\BufferObject.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\ArrayBufferObject.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\Camera.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\VertexAttributeManager.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\Object.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\UniformBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="OG\shaders\QuadVertexShader.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\SimpleFragmentShader.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\SimpleVertexShader.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\DiffuseShader.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\DiffuseShader.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\FSQ.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\FSQ.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\QuadFragmentShader.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\PKO.frag" />
+    <None Include="OG\shaders\PKO.vert" />
+  </ItemGroup>
+</Project>
