@@ -41,6 +41,7 @@ int OG::Scene_Assignment1::Init()
 
     // Get Location of Uniform from Shader and link it to 'binding point'
     shader->SetUniformBlock("Transforms", 0);
+    shader->SetUniformBlock("LightInfo", 1);
 
     // Set Geometry container
     models_["cube2"] = std::make_unique<Model>("OG/models/cube2.obj");
@@ -79,6 +80,10 @@ int OG::Scene_Assignment1::Init()
     SetOrbit(2.0f, 100);
     SetupBuffers();
 
+
+    pUBO_light->AddSubData(0, sizeof(glm::vec4), glm::value_ptr(lightColor));
+    pUBO_light->AddSubData(sizeof(glm::vec4), sizeof(GLfloat), &ambientStrength);
+
     return Scene::Init();
 }
 
@@ -98,14 +103,13 @@ int OG::Scene_Assignment1::Render(double dt)
 
     shader->Use();
 
-    shader->SetUniform3fv("Light.Pos", lightPos);
-    shader->SetUniform3fv("Light.Color", lightColor);
-    shader->SetUniform1f("Light.ambientStrength", ambientStrength);
-
     glm::mat4 projection =
         glm::perspective(glm::radians(pCamera_->Zoom), (float)_windowWidth / (float)_windowHeight, 0.1f, 100.0f);
     glm::mat4 view = pCamera_->GetViewMatrix();
 
+
+    shader->SetUniform3fv("lightPos", lightPos);
+    //pUBO_light->AddSubData(0, sizeof(glm::vec4), glm::value_ptr(lightPos));
     // Add Actual Data to Uniform Buffer
     pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
     pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
@@ -119,7 +123,7 @@ int OG::Scene_Assignment1::Render(double dt)
         
         model = glm::rotate(angleOfRotation, glm::vec3(0, 1, 0)) * glm::translate(transform) * glm::scale(scale);
 
-        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
+        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(view * model)));
         
         shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
         shader->SetUniformMatrix4fv("model", model);
@@ -195,6 +199,7 @@ void OG::Scene_Assignment1::SetupBuffers()
 
     // Generate UNIFORM_BUFFER, and Set 'binding point' as an 'index'
     pUBO_transform = std::make_unique<UniformBuffer>(static_cast<GLsizei>(2 * sizeof(glm::mat4)), 0U, GL_DYNAMIC_DRAW);
+    pUBO_light = std::make_unique<UniformBuffer>(static_cast<GLsizei>((sizeof(glm::vec4)) + sizeof(glm::vec3)), 1U, GL_STATIC_DRAW);
 }
 
 void OG::Scene_Assignment1::SetupImGui(GLFWwindow* pWindow)

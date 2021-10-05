@@ -90,6 +90,7 @@ namespace OG
 
 		// Uniform Block Object
 		std::unique_ptr<UniformBuffer> pUBO_transform;
+		std::unique_ptr<UniformBuffer> pUBO_light;
 	};
 
 }
