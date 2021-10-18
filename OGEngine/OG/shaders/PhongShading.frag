@@ -20,6 +20,14 @@ layout(std140) uniform LightInfo
 } Light;
 
 // Need Material Ka,Kd,Ks,Shininess
+layout(std140) uniform Material
+{
+    float Ka;
+    float Kd;
+    float Ks;
+    float shininess;
+};
+
 
 uniform vec3 objectColor;
 

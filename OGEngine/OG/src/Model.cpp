@@ -42,11 +42,13 @@ namespace OG
 		for (const auto& mesh : pMeshes_)
 		{
 			mesh->Draw(mode);
-
-			if (drawNormal) 
-			{
-				mesh->DrawNormal(drawFaceNormal);
+			if (drawNormal) {
+				for (const auto& mesh : pMeshes_)
+				{
+					mesh->DrawNormal(drawFaceNormal);
+				}
 			}
+
 		}
 	}
 }

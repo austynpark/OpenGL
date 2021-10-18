@@ -296,8 +296,8 @@ namespace OG
         {
             glm::highp_bvec3 result = glm::lessThan(lhs, rhs);
 
-            return glm::epsilonEqual(lhs.x, rhs.x, FLT_EPSILON) ?
-                (glm::epsilonEqual(lhs.y, rhs.y, FLT_EPSILON) ? result.z : result.y) : result.x;
+            return glm::epsilonEqual(lhs.x, rhs.x, 0.00001f) ?
+                (glm::epsilonEqual(lhs.y, rhs.y, 0.00001f) ? (glm::epsilonEqual(lhs.x, rhs.x, 0.00001f) ? false : result.z) : result.y) : result.x;
         }
     };
 
@@ -329,7 +329,7 @@ namespace OG
         std::vector< std::set< glm::vec3 , compareVec> >  vNormalSet;
         vNormalSet.resize(numVertices);
 
-        setNormalLength(0.1f);
+        setNormalLength(1.0f);
 
         // For every face
         GLuint index = 0, face_index = 0;
@@ -374,6 +374,8 @@ namespace OG
             // save normal to display
             glm::vec3  vA = vertexPosition[index];
 
+            if (index == 5)
+                int a = 5;
             auto nIt = vNormalSet[index].begin();
             while (nIt != vNormalSet[index].end())
             {
@@ -381,7 +383,8 @@ namespace OG
                 ++nIt;
             }
 
-            // save vertex normal
+            int size = (int)vNormalSet[index].size();
+            // save vertex normal[set
             vertexNormals[index] = glm::normalize(vNormal);
 
             vertexNormalDisplay[static_cast<unsigned long long>(index) * 2] = vA;
@@ -583,7 +586,7 @@ namespace OG
     /////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
 
-    void Mesh::calcVertexPositionForBoundingBox()
+    void Mesh::calcVertexPositionForBoundingBox(glm::vec3 centroid)
     {
         float distX = abs(boundingBox[1].x - boundingBox[0].x) * 0.5f;
         float distY = abs(boundingBox[1].y - boundingBox[0].y) * 0.5f;
@@ -594,8 +597,6 @@ namespace OG
         distZ = distZ != 0.0f ? distZ : 1;
 
         float maxDist = std::max(std::max(distX, distY), distZ);
-
-        glm::vec3 centroid = getModelCentroid();
 
         for (int i = 0; i < vertexPosition.size(); ++i) {
             vertexPosition.at(i) -= centroid;

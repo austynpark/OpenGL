@@ -21,7 +21,7 @@ End Header --------------------------------------------------------*/
 #include "VertexAttributeManager.h"
 
 OG::Scene_Assignment1::Scene_Assignment1(int windowWidth, int windwoHeight) : Scene(windowWidth, windwoHeight),
-shader(std::make_unique<Shader>()), pCamera_(std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 5.0f))),vertexbuffer(0), VertexArrayID(0)
+shader(std::make_unique<Shader>()), pCamera_(std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 3.0f)))
 {
     drawFaceNormal = false;
     is_normal_vector_on = false;
@@ -45,19 +45,22 @@ int OG::Scene_Assignment1::Init()
 
     // Set Geometry container
     models_["cube2"] = std::make_unique<Model>("OG/models/cube2.obj");
-    //models_["cube"] = std::make_unique<Model>("OG/models/cube.obj");
-    //models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
-    //models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
-    //models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
-    //models_["4Sphere"] = std::make_unique<Model>("OG/models/4Sphere.obj");
-    //models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
-    //models_["lucy_princeton"] = std::make_unique<Model>("OG/models/lucy_princeton.obj");
-    //models_["quad"] = std::make_unique<Model>("OG/models/quad.obj");
-    //models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
-    //models_["sphere_modified"] = std::make_unique<Model>("OG/models/sphere_modified.obj");
-    //models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
-    //models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
-    //models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
+#if 0
+    models_["cube"] = std::make_unique<Model>("OG/models/cube.obj");
+    models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
+    models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
+    models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
+    models_["4Sphere"] = std::make_unique<Model>("OG/models/4Sphere.obj");
+    models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
+    models_["lucy_princeton"] = std::make_unique<Model>("OG/models/lucy_princeton.obj");
+    models_["quad"] = std::make_unique<Model>("OG/models/quad.obj");
+    models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
+    models_["sphere_modified"] = std::make_unique<Model>("OG/models/sphere_modified.obj");
+    models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
+    models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
+    models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
+#endif // 0
+
 
     models_["sphere_mesh"] = std::make_unique<Model>(Mesh::CreateSphere(0.1f, 36, 18));
 
@@ -114,6 +117,15 @@ int OG::Scene_Assignment1::Render(double dt)
     pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
     pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
 
+	 glm::mat4 model = glm::translate(glm::vec3(0,0,0)) * glm::scale(glm::vec3(1,1,1));
+
+     glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(view * model)));
+        
+     shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
+     shader->SetUniformMatrix4fv("model", model);
+
+    DrawOrbit();
+
     for (const auto& sphere : spheres_)
     {
         glm::mat4 model = glm::mat4(1.0f);
@@ -121,7 +133,7 @@ int OG::Scene_Assignment1::Render(double dt)
         glm::vec3 transform = sphere->getPosition();
         glm::vec3 color = sphere->getColor() + glm::vec3(1.0f, 0.5f, 0.0f);
         
-        model = glm::rotate(angleOfRotation, glm::vec3(0, 1, 0)) * glm::translate(transform) * glm::scale(scale);
+        model = glm::rotate(angleOfRotation, glm::vec3(0, 1, 0))* glm::translate(transform) * glm::scale(scale);
 
         glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(view * model)));
         
@@ -142,9 +154,8 @@ int OG::Scene_Assignment1::Render(double dt)
         glm::vec3 transform = obj->getPosition();
         glm::vec3 color = obj->getColor();
 
-        model = glm::translate(transform) * glm::scale(scale);
-
-        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
+        model = glm::translate(transform) * glm::rotate(angleOfRotation, glm::vec3(1, 1, 1))* glm::scale(scale);
+        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(view * model)));
 
         shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
         shader->SetUniformMatrix4fv("model", model);
@@ -158,8 +169,6 @@ int OG::Scene_Assignment1::Render(double dt)
             models_[obj->getName()]->drawFaceNormal = drawFaceNormal;
         }
     }
-
-    DrawOrbit();
 
 	return 0;
 }

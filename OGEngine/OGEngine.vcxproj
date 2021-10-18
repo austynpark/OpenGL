@@ -45,13 +45,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)ThirdParty\include;$(ProjectDir)OG</IncludePath>
-    <LibraryPath>$(SolutionDir)ThirdParty\lib;$(LibraryPath);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)ThirdParty\include;$(ProjectDir)OG;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)ThirdParty\lib;$(LibraryPath);$(LibraryPath);$(LibraryPath);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)ThirdParty\include;$(ProjectDir)OG</IncludePath>
-    <LibraryPath>$(SolutionDir)ThirdParty\lib;;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)ThirdParty\include;$(ProjectDir)OG;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)ThirdParty\lib;;$(LibraryPath);$(LibraryPath);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -121,6 +121,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="OG\scenes\Scene_Assignment2.cpp" />
     <ClCompile Include="OG\src\Camera.cpp" />
     <ClCompile Include="OG\src\ArrayBufferObject.cpp" />
     <ClCompile Include="OG\src\BufferObject.cpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="OG\OBJReader.h" />
     <ClInclude Include="OG\ogpch.h" />
     <ClInclude Include="OG\Scene.h" />
+    <ClInclude Include="OG\scenes\Scene_Assignment2.h" />
     <ClInclude Include="OG\shader.hpp" />
     <ClInclude Include="OG\scenes\Scene_Assignment1.h" />
     <ClInclude Include="OG\BufferObject.h" />
@@ -172,10 +174,10 @@
     <ClInclude Include="OG\VertexAttributeManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="OG\shaders\DiffuseShader.frag" />
-    <None Include="OG\shaders\DiffuseShader.vert" />
-    <None Include="OG\shaders\FSQ.frag" />
-    <None Include="OG\shaders\FSQ.vert" />
+    <None Include="OG\shaders\PhongLighting.frag" />
+    <None Include="OG\shaders\PhongLighting.vert" />
+    <None Include="OG\shaders\PhongShading.frag" />
+    <None Include="OG\shaders\PhongShading.vert" />
     <None Include="OG\shaders\QuadFragmentShader.frag" />
     <None Include="OG\shaders\QuadVertexShader.vert" />
     <None Include="OG\shaders\SimpleFragmentShader.frag" />

@@ -47,7 +47,7 @@ namespace OG
     private:
         GLFWwindow* window = nullptr;
         Scene* scene = nullptr;
-        const int windowWidth = 800;
+        const int windowWidth = 1380;
         const int windowHeight = 600;
 
         float lastX = windowWidth / 2.0f;

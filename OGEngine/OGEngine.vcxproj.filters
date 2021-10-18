@@ -105,6 +105,9 @@
     <ClCompile Include="OG\src\UniformBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OG\scenes\Scene_Assignment2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="OG\Mesh.h">
@@ -176,6 +179,9 @@
     <ClInclude Include="OG\UniformBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OG\scenes\Scene_Assignment2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="OG\shaders\QuadVertexShader.vert">
@@ -187,16 +193,16 @@
     <None Include="OG\shaders\SimpleVertexShader.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\DiffuseShader.frag">
+    <None Include="OG\shaders\PhongLighting.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\DiffuseShader.vert">
+    <None Include="OG\shaders\PhongLighting.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\FSQ.frag">
+    <None Include="OG\shaders\PhongShading.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\FSQ.vert">
+    <None Include="OG\shaders\PhongShading.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="OG\shaders\QuadFragmentShader.frag">

@@ -2,16 +2,17 @@
 Copyright (C) 2021 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the prior written
 consent of DigiPen Institute of Technology is prohibited.
-File Name: Scene_Assignment1.h
-Purpose: Scene1, Draw Lines for orbit, load and render models, and process Input for camera movement
+File Name: Scene_Assignment2.h
+Purpose: Scene2, Implementing Phong Illumination model with texture & different light
 Language: C++
 Platform: Windows x64 / OpenGL 4.5
 Project: austyn.park_CS300_1
 Author: austyn.park / kyungook.park / 180001621
-Creation date: 2021/09/29
+Creation date: 2021/10/17
 End Header --------------------------------------------------------*/
-#ifndef SCENE_ASSIGNMENT1_H
-#define SCENE_ASSIGNMENT1_H
+
+#ifndef SCENE_ASSIGNMENT2_H
+#define SCENE_ASSIGNMENT2_H
 
 #include "Scene.h"
 #include "shader.hpp"
@@ -23,12 +24,26 @@ namespace OG
 	class Object;
 	class UniformBuffer;
 
-	class Scene_Assignment1 : public Scene
+	struct Orbit
+	{
+		std::unique_ptr<ArrayBufferObject> pVAO;
+		std::unique_ptr<BufferObject> pVBO;
+		std::unique_ptr<BufferObject> pEBO;
+
+		void SetOrbit(float radius, int numberOfPoints);
+		void DrawOrbit();
+		void SetupBuffer();
+
+		std::vector<glm::vec3> orbit_points;
+		std::vector<GLuint> orbit_indices;
+	};
+
+	class Scene_Assignment2 : public Scene
 	{
 	public:
-		Scene_Assignment1() = default;
-		Scene_Assignment1(int windowWidth, int windwoHeight);
-		virtual ~Scene_Assignment1();
+		Scene_Assignment2() = default;
+		Scene_Assignment2(int windowWidth, int windowHeight);
+		virtual ~Scene_Assignment2();
 
 	private:
 		int Init() override;
@@ -49,7 +64,8 @@ namespace OG
 		void DrawImGui(GLFWwindow* pWindow) override;
 		void CleanupImGui() override;
 
-		std::unique_ptr<Shader> shader;
+		std::unique_ptr<Shader> PhongLighting;
+		std::unique_ptr<Shader> PhongShading;
 
 		// Light Info for ambient + diffuse
 		glm::vec3 lightPos = glm::vec3(0.0f, 10.0f, 0.0f);
@@ -71,16 +87,6 @@ namespace OG
 		std::vector<std::unique_ptr<Object>> spheres_;
 		float angleOfRotation = 0.0f;
 		
-		std::vector<glm::vec3> orbit_points;
-		std::vector<GLuint> orbit_indices;
-
-		std::unique_ptr<ArrayBufferObject> pVAO;
-		std::unique_ptr<BufferObject> pVBO;
-		std::unique_ptr<BufferObject> pEBO;
-
-		void SetOrbit(float radius, int numberOfPoints);
-		void DrawOrbit();
-
 		bool is_normal_vector_on;
 		bool drawFaceNormal;
 
@@ -88,9 +94,8 @@ namespace OG
 		std::unique_ptr<UniformBuffer> pUBO_transform;
 		std::unique_ptr<UniformBuffer> pUBO_light;
 	};
-
 }
 
 
-#endif // !SCENE_ASSIGNMENT1_H
+#endif // !SCENE_ASSIGNMENT2_H
 

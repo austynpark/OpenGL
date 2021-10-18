@@ -79,7 +79,7 @@ namespace OG
         void setNormalLength(GLfloat nLength);
 
         // calculate and move vertex position to fit in [-1,1] box
-        void calcVertexPositionForBoundingBox();
+        void calcVertexPositionForBoundingBox(glm::vec3 centroid);
 
 
         // calculate vertex normals
