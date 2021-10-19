@@ -49,6 +49,12 @@ namespace OG
                 FragmentShaderCode += "\n" + Line;
             FragmentShaderStream.close();
         }
+        else {
+            printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", fragment_file_path);
+            getchar();
+            return;
+
+        }
 
         GLint Result = GL_FALSE;
         int InfoLogLength;

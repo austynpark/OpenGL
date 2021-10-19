@@ -14,6 +14,7 @@ End Header --------------------------------------------------------*/
 #include "Graphics.h"
 
 #include "scenes/Scene_Assignment1.h"
+#include "scenes/Scene_Assignment2.h"
 #include "Camera.h"
 
 namespace OG
@@ -135,7 +136,8 @@ namespace OG
 
 		// Initialize the scene
 		//scene = new SimpleScene_Quad(windowWidth, windowHeight);
-		scene = new Scene_Assignment1(windowWidth, windowHeight);
+		//scene = new Scene_Assignment1(windowWidth, windowHeight);
+		scene = new Scene_Assignment2(windowWidth, windowHeight);
 		
 		// Scene::Init encapsulates setting up the geometry and the texture
 		// information for the scene

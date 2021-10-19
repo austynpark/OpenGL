@@ -102,10 +102,13 @@
     <ClCompile Include="OG\src\Object.cpp">
       <Filter>Source Files\OG\source</Filter>
     </ClCompile>
-    <ClCompile Include="OG\src\UniformBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="OG\scenes\Scene_Assignment2.cpp">
+      <Filter>Source Files\OG\scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\UniformBuffer.cpp">
+      <Filter>Source Files\OG\source</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -176,10 +179,19 @@
     <ClInclude Include="OG\Object.h">
       <Filter>Source Files\OG</Filter>
     </ClInclude>
-    <ClInclude Include="OG\UniformBuffer.h">
+    <ClInclude Include="OG\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OG\scenes\Scene_Assignment2.h">
+      <Filter>Source Files\OG\scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\UniformBuffer.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\GLApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -208,7 +220,11 @@
     <None Include="OG\shaders\QuadFragmentShader.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\PKO.frag" />
-    <None Include="OG\shaders\PKO.vert" />
+    <None Include="OG\shaders\PKO.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\PKO.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

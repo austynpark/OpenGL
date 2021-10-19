@@ -16,6 +16,11 @@ End Header --------------------------------------------------------*/
 
 #include <glm/glm.hpp>
 #include <string>
+#include <vector>
+#include <unordered_map>
+
+#include "Texture.h"
+#include "Model.h"
 
 namespace OG
 {
@@ -32,14 +37,14 @@ namespace OG
         const glm::vec3& getScale() const; 
         const glm::vec3& getRotation() const;
         const glm::vec3& getColor() const;
-        bool shouldDrawNormal() const;
-        bool IsFaceNormal() const;
 
         void setPosition(const glm::vec3& pos);
         void setRotation(const glm::vec3& rot); 
         void setScale(const glm::vec3& s);
         void setColor(const glm::vec3& col);
         void setName(const char* name);
+
+		static std::unordered_map<std::string, std::unique_ptr<Model>> models_;
     private:
 
         std::string name_;
@@ -48,6 +53,8 @@ namespace OG
         glm::vec3 scale_;
         glm::vec3 rotation_axis_;
         glm::vec3 color_;
+
+
     };
     extern Object* OBJECT;
 }

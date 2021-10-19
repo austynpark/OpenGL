@@ -1,32 +1,31 @@
-#version 400 core
+#version 450 core
 layout (location = 0) in vec3 vPos;
 layout (location = 1) in vec2 vUV;
 layout (location = 2) in vec3 vNormal;
 
-vec3 diffuseColor = vec3( 0.3f, 0.3f, 0.3f );
+out VS_OUT
+{
+    vec3 fragNormal;
+    vec3 fragPos;
+    vec3 lightPos;
+    vec2 TexCoords;
+} vs_out;
 
 layout(std140) uniform Transforms
 {
-    mat4 model;
     mat4 view;
     mat4 projection;
-    mat4 normalMatrix;
-} vs_transform;
+};
 
-out VS_OUT
-{
-    vec3 fragDiffuse;
-    vec3 fragNormal;
-    vec3 fragPos;
-
-} vs_out;
+uniform mat4 model;
+uniform mat3 normalMatrix;
+uniform vec3 lightPos;
 
 void main()
 {
-    vs_out.fragDiffuse = diffuseColor;
-    vs_out.fragNormal = vs_transform.normalMatrix * vertexNormal;
-    vs_out.fragPos = (vs_transform.view * vs_transform.model * vec4(vPos, 1.0)).xyz;
-
-
-	gl_Position = vs_transform.projection * vec4( vs_out.fragPos, 1.0f );
+    vs_out.fragNormal = normalMatrix * vNormal; 
+    vs_out.fragPos = (view * model * vec4(vPos, 1.0)).xyz;
+    vs_out.lightPos = (view * vec4(lightPos, 1.0)).xyz;
+    vs_out.TexCoords = vUV;
+    gl_Position = projection * vec4(vs_out.fragPos, 1.0);
 }

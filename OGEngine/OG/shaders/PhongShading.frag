@@ -19,17 +19,11 @@ layout(std140) uniform LightInfo
     float specularStrength; //Is
 } Light;
 
-// Need Material Ka,Kd,Ks,Shininess
-layout(std140) uniform Material
-{
-    float Ka;
-    float Kd;
-    float Ks;
-    float shininess;
-};
-
-
 uniform vec3 objectColor;
+
+uniform sampler2D diffuse;
+uniform sampler2D specular;
+uniform float shininess = 32;
 
 void main() {
 

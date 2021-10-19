@@ -124,7 +124,7 @@ int OG::Scene_Assignment1::Render(double dt)
      shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
      shader->SetUniformMatrix4fv("model", model);
 
-    DrawOrbit();
+     DrawOrbit();
 
     for (const auto& sphere : spheres_)
     {

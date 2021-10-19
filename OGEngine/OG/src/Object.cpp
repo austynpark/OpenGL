@@ -11,15 +11,23 @@ Project: austyn.park_CS300_1
 Author: austyn.park / kyungook.park / 180001621
 Creation date: 2021/09/29
 End Header --------------------------------------------------------*/
+#include "ogpch.h"
 #include "Object.h"
 
 namespace OG 
 {
 	Object* OBJECT = nullptr;
+	std::unordered_map<std::string, std::unique_ptr<Model>> Object::models_;
 
 	Object::Object(const std::string& fileName)
 	{
 		OBJECT = this;
+
+		if (models_.find(fileName) == models_.end())
+		{
+			models_[fileName] = std::make_unique<Model>("OG/models/" + fileName + ".obj");
+		}
+
 		position_ = glm::vec3(0.0f);
 		rotation_axis_ = glm::vec3(0.0f);
 		scale_ = glm::vec3(1.0f, 1.0f, 1.0f);

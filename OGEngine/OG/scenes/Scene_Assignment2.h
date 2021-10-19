@@ -16,27 +16,37 @@ End Header --------------------------------------------------------*/
 
 #include "Scene.h"
 #include "shader.hpp"
-#include "Model.h"
+#include "Texture.h"
 
 namespace OG 
 {
 	class Camera;
 	class Object;
 	class UniformBuffer;
+	class ArrayBufferObject;
+	class BufferObject;
 
 	struct Orbit
 	{
+		Orbit() = delete;
+		Orbit(float radius, int numberOfPoints);
+		~Orbit();
+
 		std::unique_ptr<ArrayBufferObject> pVAO;
 		std::unique_ptr<BufferObject> pVBO;
 		std::unique_ptr<BufferObject> pEBO;
 
-		void SetOrbit(float radius, int numberOfPoints);
+		void SetOrbit();
 		void DrawOrbit();
 		void SetupBuffer();
 
 		std::vector<glm::vec3> orbit_points;
 		std::vector<GLuint> orbit_indices;
+
+		float radius;
+		int numberOfPoints;
 	};
+
 
 	class Scene_Assignment2 : public Scene
 	{
@@ -49,6 +59,7 @@ namespace OG
 		int Init() override;
 		void CleanUp() override;
 
+		int preRender(double dt) override;
 		int Render(double dt) override;
 		int postRender(double dt) override;
 
@@ -71,19 +82,17 @@ namespace OG
 		glm::vec3 lightPos = glm::vec3(0.0f, 10.0f, 0.0f);
 		glm::vec3 diffuseColor = glm::vec3(1.0f);
 		glm::vec3 lightColor = glm::vec3(1.0f, 0.5f, 0.0f);
-		float ambientStrength = 0.1f;
+		glm::vec3 ambient;
+		glm::vec3 diffuse;
+		glm::vec3 specular;
 
 		std::unique_ptr<Camera> pCamera_;
 
-		
 		std::vector<std::unique_ptr<Object>> objects_;
-		std::vector<std::string> modelName_;
-		std::unordered_map<std::string, std::unique_ptr<Model>> models_;
 	
 		const char* current_item = nullptr;
 
 		/* Functions & Variables for Orbit */
-
 		std::vector<std::unique_ptr<Object>> spheres_;
 		float angleOfRotation = 0.0f;
 		
@@ -93,6 +102,11 @@ namespace OG
 		// Uniform Block Object
 		std::unique_ptr<UniformBuffer> pUBO_transform;
 		std::unique_ptr<UniformBuffer> pUBO_light;
+
+		std::unique_ptr<Texture> pDiffuseTexture;
+		std::unique_ptr<Texture> pSpecularTexture;
+
+		std::unique_ptr<Orbit> pOrbit;
 	};
 }
 

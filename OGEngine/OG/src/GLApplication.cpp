@@ -31,7 +31,7 @@ int main()
     std::unique_ptr<Graphics> graphics = std::make_unique<Graphics>();
 
     // Create Window, Load OpenGL function, Initialize the scene to use for rendering objects
-    graphics->Init();
+    assert(graphics->Init());
     GLFWwindow* window = graphics->GetWindow();
     graphics->GetScene()->SetupImGui(window);
 

@@ -61,7 +61,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>ogpch.h</PrecompiledHeaderFile>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -80,7 +80,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>ogpch.h</PrecompiledHeaderFile>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -134,8 +134,8 @@
     <ClCompile Include="OG\src\Graphics.cpp" />
     <ClCompile Include="OG\src\Mesh.cpp" />
     <ClCompile Include="OG\src\Object.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="OG\src\OBJReader.cpp" />
     <ClCompile Include="OG\src\ogpch.cpp">
@@ -146,6 +146,7 @@
     <ClCompile Include="OG\src\shader.cpp" />
     <ClCompile Include="OG\scenes\Scene_Assignment1.cpp" />
     <ClCompile Include="OG\src\UniformBuffer.cpp" />
+    <ClCompile Include="OG\src\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ThirdParty\include\imgui\imconfig.h" />
@@ -159,6 +160,7 @@
     <ClInclude Include="..\ThirdParty\include\imgui\imstb_truetype.h" />
     <ClInclude Include="OG\Camera.h" />
     <ClInclude Include="OG\ArrayBufferObject.h" />
+    <ClInclude Include="OG\GLApplication.h" />
     <ClInclude Include="OG\Model.h" />
     <ClInclude Include="OG\Graphics.h" />
     <ClInclude Include="OG\Mesh.h" />
@@ -170,8 +172,10 @@
     <ClInclude Include="OG\shader.hpp" />
     <ClInclude Include="OG\scenes\Scene_Assignment1.h" />
     <ClInclude Include="OG\BufferObject.h" />
+    <ClInclude Include="OG\Texture.h" />
     <ClInclude Include="OG\UniformBuffer.h" />
     <ClInclude Include="OG\VertexAttributeManager.h" />
+    <ClInclude Include="OG\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="OG\shaders\PhongLighting.frag" />
