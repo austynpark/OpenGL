@@ -15,12 +15,12 @@ End Header --------------------------------------------------------*/
 
 namespace OG
 {
-	Model::Model(const std::string& filepath)
+	Model::Model(const std::string& filepath) : uvType(UVType::PLANAR_UV), isNormMapping(true)
 	{
 		LoadModel(filepath);
 	}
 
-	Model::Model(Mesh* mesh)
+	Model::Model(Mesh* mesh) : uvType(UVType::PLANAR_UV)
 	{
 		pMeshes_.emplace_back(std::move(mesh));
 		mesh->SetBuffer();
@@ -37,18 +37,27 @@ namespace OG
 		}
 	}
 
-	void Model::Draw(GLenum mode)
+	void Model::Draw(Shader* shader)
 	{
 		for (const auto& mesh : pMeshes_)
 		{
-			mesh->Draw(mode);
-			if (drawNormal) {
-				for (const auto& mesh : pMeshes_)
-				{
-					mesh->DrawNormal(drawFaceNormal);
-				}
-			}
+			shader->SetUniform1f("zMin", mesh->boundingBox[0].z);
+			shader->SetUniform1f("zMax", mesh->boundingBox[1].z);
 
+			shader->SetUniform1b("isNormMapping", isNormMapping);
+			mesh->Draw();
+			if (drawNormal) {
+				mesh->DrawNormal(drawFaceNormal);
+			}
+		}
+	}
+	void Model::RemapUV()
+	{
+		for (const auto& mesh : pMeshes_)
+		{
+			mesh->calcUVs(uvType, isNormMapping);
+			mesh->MapVertexBuffer();
+			mesh->SetBuffer();
 		}
 	}
 }

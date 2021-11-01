@@ -19,7 +19,12 @@ namespace OG
 {
     class Shader
     {
+        std::string vert_file_path;
+        std::string frag_file_path;
     public:
+        Shader() = default;
+        Shader(const std::string vertex_file_path, const std::string fragment_file_path);
+
         GLuint programID;
         GLuint pipeLineID;
 
@@ -31,6 +36,8 @@ namespace OG
         };
         ///////////////////
         void LoadShaders(const char* vertex_file_path, const char* fragment_file_path);
+
+        void ReloadShaders();
 
         ///////////////////
         void LoadPipeline(const char* vertex_file_path, const char* fragment_file_path, GLuint* programIDs);
@@ -57,9 +64,9 @@ namespace OG
         void SetUniform4f(const std::string& name, GLfloat x, GLfloat y, GLfloat z, GLfloat w) const;
         void SetUniformMatrix4fv(const std::string& name, const glm::mat4& mat) const;
         void SetUniformMatrix3fv(const std::string& name, const glm::mat3& mat) const;
-
-        
         void SetUniformBlock(const std::string& name, GLuint blockIndex);
+
+        ~Shader();
     };
 }
 

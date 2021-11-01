@@ -26,8 +26,7 @@ namespace OG
 
     Mesh::Mesh(Mesh&& mesh) noexcept : pVAO(std::move(mesh.pVAO)), pVBO(std::move(mesh.pVBO)), pEBO(std::move(mesh.pEBO)),
         vertexBuffer_(mesh.vertexBuffer_), indices_(mesh.indices_), vertexPosition(mesh.vertexPosition),
-        vertexPosIndices(mesh.vertexPosIndices), vertexUVsIndices(mesh.vertexUVsIndices), vertexNormalsIndices(mesh.vertexNormalsIndices),
-        vertexUVs(mesh.vertexUVs), vertexNormals(mesh.vertexNormals), vertexNormalDisplay(mesh.vertexNormalDisplay) 
+   vertexUVs(mesh.vertexUVs), vertexNormals(mesh.vertexNormals), vertexNormalDisplay(mesh.vertexNormalDisplay) 
     {
         boundingBox[0] = mesh.boundingBox[0];
         boundingBox[1] = mesh.boundingBox[1];
@@ -43,10 +42,10 @@ namespace OG
     {
     }
 
-    void Mesh::Draw(GLenum mode)
+    void Mesh::Draw()
     {
         pVAO->Bind();
-        glDrawElements(mode, static_cast<GLsizei>(indices_.size()), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices_.size()), GL_UNSIGNED_INT, 0);
         pVAO->UnBind();
     }
 
@@ -110,6 +109,19 @@ namespace OG
         glEnableVertexAttribArray(0);
     }
 
+    void Mesh::MapVertexBuffer()
+    {
+        int vertexCount = static_cast<int>(vertexPosition.size());
+        vertexBuffer_.resize(vertexCount);
+
+        for (int i = 0; i < vertexCount; ++i)
+        {
+            vertexBuffer_.at(i).vertex_position = vertexPosition.at(i);
+            vertexBuffer_.at(i).vertex_normal = vertexNormals.at(i);
+            vertexBuffer_.at(i).vertex_uv = vertexUVs.at(i);
+        }
+    }
+
     // sectorCount = column count, stackCount = row count
     Mesh* Mesh::CreateSphere(float radius, int sectorCount, int stackCount)
     {
@@ -143,7 +155,6 @@ namespace OG
             }
         }
 
-        int index = 0;
         int k1, k2;
 
         for (int i = 0; i < stackCount; ++i)
@@ -157,39 +168,33 @@ namespace OG
                 // k1 => k2 => k1+1
                 if (i != 0)
                 {
-                    sphere->vertexPosIndices.push_back(k1);
-                    sphere->vertexPosIndices.push_back(k2);
-                    sphere->vertexPosIndices.push_back(k1 + 1);
-
-                    sphere->indices_.push_back(index++);
-                    sphere->indices_.push_back(index++);
-                    sphere->indices_.push_back(index++);
+                    sphere->indices_.push_back(k1);
+                    sphere->indices_.push_back(k2);
+                    sphere->indices_.push_back(k1 + 1);
                 }
 
                 // k1+1 => k2 => k2+1
                 if (i != (stackCount - 1))
                 {
-                    sphere->vertexPosIndices.push_back(k1 + 1);
-                    sphere->vertexPosIndices.push_back(k2);
-                    sphere->vertexPosIndices.push_back(k2 + 1);
-
-                    sphere->indices_.push_back(index++);
-                    sphere->indices_.push_back(index++);
-                    sphere->indices_.push_back(index++);
+                    sphere->indices_.push_back(k1 + 1);
+                    sphere->indices_.push_back(k2);
+                    sphere->indices_.push_back(k2 + 1);
                 }
 
             }
         }
 
         sphere->calcVertexNormals();
-        sphere->calcUVs(Mesh::UVType::SPHERICAL_UV);
+        sphere->calcUVs(UVType::SPHERICAL_UV);
 
-        for (int i = 0; i < index; ++i)
+        int indiceSize = static_cast<int>(sphere->vertexPosition.size());
+
+        for (int i = 0; i < indiceSize; ++i)
         {
             Vertex vertex;
-            vertex.vertex_position = sphere->vertexPosition.at(sphere->vertexPosIndices.at(i));
-            vertex.vertex_uv = sphere->vertexUVs.at(sphere->vertexPosIndices.at(i));
-            vertex.vertex_normal = sphere->vertexNormals.at(sphere->vertexPosIndices.at(i));
+            vertex.vertex_position = sphere->vertexPosition.at(i);
+            vertex.vertex_uv = sphere->vertexUVs.at(i);
+            vertex.vertex_normal = sphere->vertexNormals.at(i);
 
             sphere->vertexBuffer_.emplace_back(std::move(vertex));
         }
@@ -222,11 +227,6 @@ namespace OG
         return reinterpret_cast<GLfloat*>(vertexNormalDisplay.data());
     }
 
-    GLuint* Mesh::getIndexBuffer()
-    {
-        return vertexPosIndices.data();
-    }
-
     ////////////////////////////////////
     ////////////////////////////////////
     ////////////////////////////////////
@@ -234,17 +234,6 @@ namespace OG
     {
         return (unsigned int)vertexPosition.size();
     }
-
-    unsigned int Mesh::getIndexBufferSize()
-    {
-        return (unsigned int)vertexPosIndices.size();
-    }
-
-    unsigned int Mesh::getTriangleCount()
-    {
-        return getIndexBufferSize() / 3;
-    }
-
     unsigned int Mesh::getVertexCount()
     {
         return getVertexBufferSize();
@@ -259,13 +248,13 @@ namespace OG
     {
         glm::vec3 scale = boundingBox[1] - boundingBox[0];
 
-        if (scale.x == 0.0)
+        if (abs(scale.x) <= 0.00001)
             scale.x = 1.0;
 
-        if (scale.y == 0.0)
+        if (abs(scale.y) <= 0.00001)
             scale.y = 1.0;
 
-        if (scale.z == 0.0)
+        if (abs(scale.z) <= 0.00001)
             scale.z = 1.0;
 
         return scale;
@@ -322,7 +311,7 @@ namespace OG
 
         // Initialize vertex normals
         GLuint numVertices = getVertexCount();
-        GLuint numFaces = static_cast<GLuint>(vertexPosIndices.size()) / 3;
+        GLuint numFaces = static_cast<GLuint>(indices_.size()) / 3;
         vertexNormals.resize(numVertices, glm::vec3(0.0f));
         vertexNormalDisplay.resize(static_cast<unsigned long long>(numVertices) * 2, glm::vec3(0.0f));
         faceNormalDisplay.resize(static_cast<unsigned long long>(numFaces) * 2, glm::vec3(0.0f));
@@ -333,11 +322,11 @@ namespace OG
 
         // For every face
         GLuint index = 0, face_index = 0;
-        for (; index < vertexPosIndices.size(); )
+        for (; index < indices_.size(); )
         {
-            GLuint a = vertexPosIndices.at(index++);
-            GLuint b = vertexPosIndices.at(index++);
-            GLuint c = vertexPosIndices.at(index++);
+            GLuint a = indices_.at(index++);
+            GLuint b = indices_.at(index++);
+            GLuint c = indices_.at(index++);
 
             glm::vec3  vA = vertexPosition[a];
             glm::vec3  vB = vertexPosition[b];
@@ -353,7 +342,6 @@ namespace OG
 
             faceNormalDisplay.at(face_index++) = midPoint;
             faceNormalDisplay.at(face_index++) = midPoint + (N * normalLength);
-
 
             if (bFlipNormals)
                 N = N * -1.0f;
@@ -374,8 +362,6 @@ namespace OG
             // save normal to display
             glm::vec3  vA = vertexPosition[index];
 
-            if (index == 5)
-                int a = 5;
             auto nIt = vNormalSet[index].begin();
             while (nIt != vNormalSet[index].end())
             {
@@ -384,8 +370,11 @@ namespace OG
             }
 
             int size = (int)vNormalSet[index].size();
-            // save vertex normal[set
-            vertexNormals[index] = glm::normalize(vNormal);
+            if (size != 0)
+                // save vertex normal set
+                vertexNormals[index] = glm::normalize(vNormal);
+            else
+                vertexNormals[index] = vNormal;
 
             vertexNormalDisplay[static_cast<unsigned long long>(index) * 2] = vA;
             vertexNormalDisplay[(static_cast<unsigned long long>(index) * 2) + 1] = vA + (normalLength * vertexNormals[index]);
@@ -430,10 +419,18 @@ namespace OG
 
     /////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
-
-    int Mesh::calcUVs(Mesh::UVType uvType)
+    
+    /// <summary>
+    /// calculate Texture Coord
+    /// </summary>
+    /// <param name="uvType">
+    /// Mapping Type (enum UVType)
+    /// </param>
+    /// <param name="isPosMapping">
+    /// If true, texture entity is vertex normal. If true, use vertex position
+    /// </param>
+    void Mesh::calcUVs(UVType uvType, bool isNormMapping)
     {
-        int rFlag = -1;
 
         // clear any existing UV
         vertexUVs.clear();
@@ -442,7 +439,12 @@ namespace OG
         int vBsize = static_cast<int>(vertexPosition.size());
         for (int nVertex = 0; nVertex < vBsize; ++nVertex)
         {
-            glm::vec3 V = vertexPosition[nVertex];
+            glm::vec3 V;
+            if (!isNormMapping)
+                V = vertexPosition[nVertex];
+            else
+                V = vertexNormals[nVertex];
+
             glm::vec2 uv(0.0f);
 
             glm::vec3 normVertex = glm::vec3((V.x - boundingBox[0].x) / delta.x,
@@ -451,49 +453,45 @@ namespace OG
 
             //        normVertex = (2.0f * normVertex) - glm::vec3(1.0f);
 
-            glm::vec3 centroidVec = getCentroidVector(V);
-
             float theta(0.0f);
             float z(0.0f);
             float phi(0.0f);
+			float zdiff = boundingBox[1].z - boundingBox[0].z;
 
             switch (uvType)
             {
-            case Mesh::UVType::PLANAR_UV:
-                uv.x = (normVertex.x - (-1.0f)) / (2.0f);
-                uv.y = (normVertex.y - (-1.0f)) / (2.0f);
+            case UVType::PLANAR_UV:
+                uv = calcCubeMap(V);
                 break;
 
-            case Mesh::UVType::CYLINDRICAL_UV:
-                theta = glm::degrees(static_cast<float>(atan2(centroidVec.y, centroidVec.x)));
+            case UVType::CYLINDRICAL_UV:
+                theta = glm::degrees(static_cast<float>(glm::atan(V.y, V.x)));
+                theta += 180.0f;
+                uv.x = theta / 360.0f;
+
+                zdiff = (zdiff == 0.0f) ? 1.0f : zdiff;
+
+                uv.y = (V.z - boundingBox[0].z) / (zdiff);
+                break;
+
+            case UVType::SPHERICAL_UV:
+                theta = glm::degrees(static_cast<float>(glm::atan(V.y, V.x)));
                 theta += 180.0f;
 
-                z = (centroidVec.z + 1.0f) * 0.5f;
+                phi = glm::degrees(glm::acos(V.z / V.length()));
 
                 uv.x = theta / 360.0f;
-                uv.y = z;
+                uv.y = (phi / 180.0f);
+
                 break;
 
-            case Mesh::UVType::SPHERICAL_UV:
-                theta = glm::degrees(static_cast<float>(glm::atan(centroidVec.y, centroidVec.x)));
-                theta += 180.0f;
-
-                z = centroidVec.z;
-                phi = glm::degrees(glm::acos(z / centroidVec.length()));
-
-                uv.x = theta / 360.0f;
-                uv.y = 1.0f - (phi / 180.0f);
-                break;
-
-            case Mesh::UVType::CUBE_MAPPED_UV:
-                uv = calcCubeMap(centroidVec);
+            case UVType::CUBE_MAPPED_UV:
+                //uv = calcCubeMap(centroidVec);
                 break;
             }
 
             vertexUVs.push_back(uv);
         }
-
-        return rFlag;
     }
 
     /////////////////////////////////////////////////////
@@ -509,78 +507,45 @@ namespace OG
         float absY = abs(y);
         float absZ = abs(z);
 
-        int isXPositive = x > 0 ? 1 : 0;
-        int isYPositive = y > 0 ? 1 : 0;
-        int isZPositive = z > 0 ? 1 : 0;
-
-        float maxAxis, uc, vc;
         glm::vec2 uv = glm::vec2(0.0);
 
-        // POSITIVE X
-        if (bool(isXPositive) && (absX >= absY) && (absX >= absZ))
+        // POSITIVE & NEGATIVE X
+        if ((absX >= absY) && (absX >= absZ))
         {
-            // u (0 to 1) goes from +z to -z
-            // v (0 to 1) goes from -y to +y
-            maxAxis = absX;
-            uc = -z;
-            vc = y;
-        }
+			uv.y = y / absX;
 
-        // NEGATIVE X
-        else if (!bool(isXPositive) && absX >= absY && absX >= absZ)
-        {
-            // u (0 to 1) goes from -z to +z
-            // v (0 to 1) goes from -y to +y
-            maxAxis = absX;
-            uc = z;
-            vc = y;
+            if (x > 0)
+            {
+                uv.x = -z / absX;
+            }
+            else
+            {
+                uv.x = z / absX;
+            }
         }
-
-        // POSITIVE Y
-        else if (bool(isYPositive) && absY >= absX && absY >= absZ)
+        // POSITIVE & NEGATIVE Y
+        else if ((absY >= absX) && (absY >= absZ))
         {
-            // u (0 to 1) goes from -x to +x
-            // v (0 to 1) goes from +z to -z
-            maxAxis = absY;
-            uc = x;
-            vc = -z;
+            uv.x = x / absY;
+
+            if (y > 0)
+                uv.y = -z / absY;
+            else
+                uv.y = z / absY;
         }
-
-        // NEGATIVE Y
-        else if (!bool(isYPositive) && absY >= absX && absY >= absZ)
+        // POSITIVE & NEGATIVE Z
+        else if (absZ >= absX && absZ >= absY)
         {
-            // u (0 to 1) goes from -x to +x
-            // v (0 to 1) goes from -z to +z
-            maxAxis = absY;
-            uc = x;
-            vc = z;
-        }
+			uv.y = y / absZ;
 
-        // POSITIVE Z
-        else if (bool(isZPositive) && absZ >= absX && absZ >= absY)
-        {
-            // u (0 to 1) goes from -x to +x
-            // v (0 to 1) goes from -y to +y
-            maxAxis = absZ;
-            uc = x;
-            vc = y;
-        }
-
-        // NEGATIVE Z
-        else if (!bool(isZPositive) && absZ >= absX && absZ >= absY)
-        {
-            // u (0 to 1) goes from +x to -x
-            // v (0 to 1) goes from -y to +y
-            maxAxis = absZ;
-            uc = -x;
-            vc = y;
+            if (z > 0)
+                uv.x = x / absZ;
+            else
+                uv.x = -x / absZ;
         }
 
         // Convert range from -1 to 1 to 0 to 1
-        uv.s = 0.5f * (uc / maxAxis + 1.0f);
-        uv.t = 0.5f * (vc / maxAxis + 1.0f);
-
-        return uv;
+        return (uv + glm::vec2(1.0)) * 0.5f;
     }
 
     /////////////////////////////////////////////////////
@@ -602,5 +567,10 @@ namespace OG
             vertexPosition.at(i) -= centroid;
             vertexPosition.at(i) /= maxDist;
         }
+
+        boundingBox[0] -= centroid;
+        boundingBox[0] /= maxDist;
+        boundingBox[1] -= centroid;
+        boundingBox[1] /= maxDist;
     }
 }

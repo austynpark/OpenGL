@@ -19,6 +19,8 @@ End Header --------------------------------------------------------*/
 
 #include <memory>
 
+#include "UVType.h"
+
 namespace OG 
 {
     class BufferObject;
@@ -66,11 +68,6 @@ namespace OG
         unsigned int getVertexCount();
         unsigned int getVertexNormalCount();
 
-        // Get vertex index buffer
-        GLuint* getIndexBuffer();
-        unsigned int getIndexBufferSize();
-        unsigned int getTriangleCount();
-
         glm::vec3   getModelScale();
         glm::vec3   getModelCentroid();
         glm::vec3   getCentroidVector(glm::vec3 vVertex);
@@ -88,23 +85,19 @@ namespace OG
         // calculate the "display" normals
         void calcVertexNormalsForDisplay(GLboolean bFlipNormals = false);
 
-        // calculate texture coordinates
-        enum class UVType {
-            PLANAR_UV = 0,
-            CYLINDRICAL_UV,
-            SPHERICAL_UV,
-            CUBE_MAPPED_UV
-        };
+        void calcUVs(UVType uvType = UVType::PLANAR_UV, bool isNormMapping = true);
+        glm::vec2 calcCubeMap(glm::vec3 vEntity);
 
-        int         calcUVs(Mesh::UVType uvType = Mesh::UVType::PLANAR_UV);
-        glm::vec2   calcCubeMap(glm::vec3 vEntity);
-
-        void Draw(GLenum mode);
+        void Draw();
         void DrawNormal(bool isFaceNormal);
         void SetBuffer();
         void SetNormalDrawBuffer();
+        void MapVertexBuffer();
 
         static Mesh* CreateSphere(float radius, int sectorCount, int stackCount);
+
+        // Model vertex maximum, minimum value
+        glm::vec3               boundingBox[2];
 
     private:
         // Vertex, Index Buffer and Vertex Array Buffer holding Mesh data 
@@ -118,14 +111,10 @@ namespace OG
 
         // Temporary container to make Interleaved Data
         std::vector<glm::vec3>    vertexPosition;
-        std::vector<GLuint>       vertexPosIndices;
-        std::vector<GLuint>       vertexUVsIndices;
-        std::vector<GLuint>       vertexNormalsIndices;
         std::vector<glm::vec2>    vertexUVs;
         std::vector<glm::vec3>    vertexNormals;
 
-        // Model vertex maximum, minimum value
-        glm::vec3               boundingBox[2];
+
         GLfloat                 normalLength;
 
         // Vertex Buffer for Normal Draw

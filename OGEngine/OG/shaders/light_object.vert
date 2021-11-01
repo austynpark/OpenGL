@@ -7,9 +7,7 @@ out VS_OUT
 {
     vec3 fragNormal;
     vec3 fragPos;
-    vec2 TexCoords;
-    vec3 Pos;
-    vec3 Norm;
+    vec3 lightPos;
 } vs_out;
 
 layout(std140) uniform Transforms
@@ -22,11 +20,10 @@ uniform mat4 model;
 uniform mat3 normalMatrix;
 
 void main()
-{
+{    
     vs_out.fragNormal = normalMatrix * vNormal; 
-    vs_out.fragPos = (model * vec4(vPos, 1.0)).xyz;
-    vs_out.TexCoords = vUV;
-    vs_out.Pos = vPos;
-    vs_out.Norm = vNormal;
-    gl_Position = projection * view * vec4(vs_out.fragPos, 1.0);
+    vs_out.fragPos = (view * model * vec4(vPos, 1.0)).xyz;
+    // lightPos is center object position
+    vs_out.lightPos = (view * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    gl_Position = projection * vec4(vs_out.fragPos, 1.0);
 }

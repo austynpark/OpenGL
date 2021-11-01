@@ -142,7 +142,7 @@ int OG::Scene_Assignment1::Render(double dt)
         shader->SetUniform3fv("objectColor", color);
 
         if (models_.find(sphere->getName()) != models_.end())
-            models_[sphere->getName()]->Draw(GL_TRIANGLES);
+            models_[sphere->getName()]->Draw(shader.get());
     }
 
     for (const auto& obj : objects_)
@@ -163,7 +163,7 @@ int OG::Scene_Assignment1::Render(double dt)
 
         if (models_.find(obj->getName()) != models_.end())
         {
-            models_[obj->getName()]->Draw(GL_TRIANGLES);
+            models_[obj->getName()]->Draw(shader.get());
 
             models_[obj->getName()]->drawNormal = is_normal_vector_on;
             models_[obj->getName()]->drawFaceNormal = drawFaceNormal;

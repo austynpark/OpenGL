@@ -35,7 +35,7 @@ namespace OG
 	}
 
 	Object* Object::CreateObject(const std::string& fileName, glm::vec3 position, glm::vec3 scale,
-		glm::vec3 color, glm::vec3 rotation_axis)
+		 glm::vec3 rotation_axis, GLfloat angle, glm::vec3 color)
 	{
 		Object* obj = new Object(fileName);
 		obj->position_ = position;
@@ -43,6 +43,7 @@ namespace OG
 		obj->color_ = color;
 		obj->rotation_axis_ = rotation_axis;
 		obj->name_ = fileName;
+		obj->rotation_angle_ = angle;
 
 		return obj;
 	}

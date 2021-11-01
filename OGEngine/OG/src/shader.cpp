@@ -18,9 +18,15 @@ End Header --------------------------------------------------------*/
 //////////////////////////////////////////////////////////////////////////
 namespace OG 
 {
+    Shader::Shader(const std::string vertex_file_path, const std::string fragment_file_path)
+    {
+        vert_file_path = "OG/shaders/" + vertex_file_path;
+        frag_file_path = "OG/shaders/" + fragment_file_path;
+
+        LoadShaders(vert_file_path.c_str(), frag_file_path.c_str());
+    }
     void Shader::LoadShaders(const char* vertex_file_path, const char* fragment_file_path)
     {
-
         // Create the shaders
         GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
         GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -83,7 +89,7 @@ namespace OG
         glCompileShader(FragmentShaderID);
 
         // Check Fragment Shader
-        glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
+            glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
         glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
         if (InfoLogLength > 0) {
             std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
@@ -108,12 +114,18 @@ namespace OG
             printf("%s\n", &ProgramErrorMessage[0]);
         }
 
-
         //glDetachShader(programID, VertexShaderID);
         //glDetachShader(programID, FragmentShaderID);
 
         glDeleteShader(VertexShaderID);
         glDeleteShader(FragmentShaderID);
+    }
+
+    void Shader::ReloadShaders()
+    {
+        CleanUp();
+
+        LoadShaders(vert_file_path.c_str(), frag_file_path.c_str());
     }
 
     ///////////////////////////////////////////////////
@@ -526,6 +538,10 @@ namespace OG
             glUniformBlockBinding(programID, location, blockIndex);
         else
             std::cout << "Uniform block " << name << " doesn't exist" << std::endl;
+    }
+    Shader::~Shader()
+    {
+        CleanUp();
     }
 }
 

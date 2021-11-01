@@ -194,6 +194,9 @@
     <ClInclude Include="OG\GLApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OG\UVType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="OG\shaders\QuadVertexShader.vert">

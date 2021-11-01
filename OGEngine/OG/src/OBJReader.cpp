@@ -150,50 +150,18 @@ namespace OG
                 }
 
                 // Insert first 3 vert in face
-                pMesh->vertexPosIndices.push_back(*(pos_Indices.begin()));
-                pMesh->vertexPosIndices.push_back(*(pos_Indices.begin() + 1));
-                pMesh->vertexPosIndices.push_back(*(pos_Indices.begin() + 2));
-
-                if (!norm_Indices.empty()) {
-                    pMesh->vertexNormalsIndices.push_back(*(norm_Indices.begin()));
-                    pMesh->vertexNormalsIndices.push_back(*(norm_Indices.begin() + 1));
-                    pMesh->vertexNormalsIndices.push_back(*(norm_Indices.begin() + 2));
-                }
-
-                if (!uv_Indices.empty()) {
-                    pMesh->vertexUVsIndices.push_back(*(uv_Indices.begin()));
-                    pMesh->vertexUVsIndices.push_back(*(uv_Indices.begin() + 1));
-                    pMesh->vertexUVsIndices.push_back(*(uv_Indices.begin() + 2));
-                }
-
-                pMesh->indices_.push_back(indices_index++);
-                pMesh->indices_.push_back(indices_index++);
-                pMesh->indices_.push_back(indices_index++);
+                pMesh->indices_.push_back(*(pos_Indices.begin()));
+                pMesh->indices_.push_back(*(pos_Indices.begin() + 1));
+                pMesh->indices_.push_back(*(pos_Indices.begin() + 2));
 
                 // For face more than 3 vertices
                 int vert_in_face = static_cast<int>(pos_Indices.size());
 
                 for (int i = 0; i < vert_in_face - 3; ++i)
                 {
-                    pMesh->vertexPosIndices.push_back(*(pos_Indices.begin()));
-                    pMesh->vertexPosIndices.push_back(*(pos_Indices.begin() + i + 2));
-                    pMesh->vertexPosIndices.push_back(*(pos_Indices.begin() + i + 3));
-
-                    if (!norm_Indices.empty()) {
-                        pMesh->vertexNormalsIndices.push_back(*(norm_Indices.begin()));
-                        pMesh->vertexNormalsIndices.push_back(*(norm_Indices.begin() + i + 2));
-                        pMesh->vertexNormalsIndices.push_back(*(norm_Indices.begin() + i + 3));
-                    }
-
-                    if (!uv_Indices.empty()) {
-                        pMesh->vertexUVsIndices.push_back(*(uv_Indices.begin()));
-                        pMesh->vertexUVsIndices.push_back(*(uv_Indices.begin() + i + 2));
-                        pMesh->vertexUVsIndices.push_back(*(uv_Indices.begin() + i + 3));
-                    }
-
-                    pMesh->indices_.push_back(indices_index++);
-                    pMesh->indices_.push_back(indices_index++);
-                    pMesh->indices_.push_back(indices_index++);
+                    pMesh->indices_.push_back(*(pos_Indices.begin()));
+                    pMesh->indices_.push_back(*(pos_Indices.begin() + i + 2));
+                    pMesh->indices_.push_back(*(pos_Indices.begin() + i + 3));
                 }
             }
         }
@@ -208,8 +176,8 @@ namespace OG
             << timeDuration
             << "  milli seconds." << std::endl;
 
-        bool hasNormals = pMesh->vertexNormalsIndices.size();
-        bool hasTextureCoords = pMesh->vertexUVsIndices.size();
+        bool hasNormals = pMesh->vertexNormals.size();
+        bool hasTextureCoords = pMesh->vertexUVs.size();
 
         pMesh->boundingBox[0] = minVec3;
         pMesh->boundingBox[1] = maxVec3;
@@ -219,18 +187,11 @@ namespace OG
         pMesh->calcVertexPositionForBoundingBox(positionSum);
         // Now calculate vertex normals
         pMesh->calcVertexNormals(bFlipNormals);
-        pMesh->calcUVs(Mesh::UVType::CYLINDRICAL_UV);
 
-        for (int i = 0; i < indices_index; ++i)
-        {
-            Vertex vertex;
-            vertex.vertex_position = pMesh->vertexPosition.at(pMesh->vertexPosIndices[i]);
-            vertex.vertex_normal = pMesh->vertexNormals.at(pMesh->vertexPosIndices[i]);
-            vertex.vertex_uv = pMesh->vertexUVs.at(pMesh->vertexPosIndices[i]);
+		pMesh->calcUVs();
 
-            pMesh->vertexBuffer_.emplace_back(std::move(vertex));
-        }
-
+        pMesh->MapVertexBuffer();
+  
         pMeshes.emplace_back(std::move(pMesh));
 
         return timeDuration;

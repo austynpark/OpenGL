@@ -18,6 +18,8 @@ End Header --------------------------------------------------------*/
 #include "shader.hpp"
 #include "Texture.h"
 
+#include "UVType.h"
+
 namespace OG 
 {
 	class Camera;
@@ -25,6 +27,26 @@ namespace OG
 	class UniformBuffer;
 	class ArrayBufferObject;
 	class BufferObject;
+
+	enum lightType : int
+	{
+		E_POINT = 0,
+		E_SPOT = 1,
+		E_DIR = 2
+	};
+
+	struct Light
+	{
+		GLfloat cutOff = 12.5f;
+		GLfloat outerCutOff = 17.5f;
+		GLfloat fallOut = 1.0f;
+		GLint type = E_POINT;
+		glm::vec4 ambient{ 1.0f, 1.0f, 1.0f, 0.0f};
+		glm::vec4 diffuse{ 1.0f, 1.0f, 1.0f, 0.0f};
+		glm::vec4 specular{ 1.0f, 1.0f, 1.0f, 0.0f};
+		glm::vec4 position{ 0.0f,0.0f,0.0f, 1.0f};
+		glm::vec4 direction{ 0.0f, 0.0f, 0.0f, 0.0f};
+	};
 
 	struct Orbit
 	{
@@ -45,6 +67,7 @@ namespace OG
 
 		float radius;
 		int numberOfPoints;
+		float prev_radius;
 	};
 
 
@@ -75,38 +98,52 @@ namespace OG
 		void DrawImGui(GLFWwindow* pWindow) override;
 		void CleanupImGui() override;
 
-		std::unique_ptr<Shader> PhongLighting;
-		std::unique_ptr<Shader> PhongShading;
+		//std::unique_ptr<Shader> PhongLighting;
+		//std::unique_ptr<Shader> PhongShading;
 
-		// Light Info for ambient + diffuse
-		glm::vec3 lightPos = glm::vec3(0.0f, 10.0f, 0.0f);
-		glm::vec3 diffuseColor = glm::vec3(1.0f);
-		glm::vec3 lightColor = glm::vec3(1.0f, 0.5f, 0.0f);
-		glm::vec3 ambient;
-		glm::vec3 diffuse;
-		glm::vec3 specular;
+		std::unordered_map<std::string, std::unique_ptr<Shader>> shaders_;
+		
+		const char* current_shader = nullptr;
+		std::unique_ptr<Shader> lightShader;
+
+		// Light Info
+		Light light[16];
 
 		std::unique_ptr<Camera> pCamera_;
 
 		std::vector<std::unique_ptr<Object>> objects_;
-	
+		std::unique_ptr<Object> plane_;
+		// Draw Normal
+		bool is_normal_vector_on;
+		bool drawFaceNormal;
+
 		const char* current_item = nullptr;
 
 		/* Functions & Variables for Orbit */
 		std::vector<std::unique_ptr<Object>> spheres_;
+		std::unique_ptr<Orbit> pOrbit;
 		float angleOfRotation = 0.0f;
+		bool isRotating;
 		
-		bool is_normal_vector_on;
-		bool drawFaceNormal;
-
 		// Uniform Block Object
 		std::unique_ptr<UniformBuffer> pUBO_transform;
 		std::unique_ptr<UniformBuffer> pUBO_light;
 
+		// Global Uniform Block Var //
+		glm::vec3 att{ 1.0f,0.09f,0.032f };
+		glm::vec3 global_ambient{0.0f, 0.0f, 0.1f};
+		glm::vec3 fog_color{ 0.2f, 0.4f, 0.55f };
+		float near = 0.1f;
+		float far = 20.0f;
+		int num_of_lights;
+		//////////////////////////////
+
 		std::unique_ptr<Texture> pDiffuseTexture;
 		std::unique_ptr<Texture> pSpecularTexture;
 
-		std::unique_ptr<Orbit> pOrbit;
+		bool bVisualizeTex;
+		bool bCalcOnCPU;
+		std::unique_ptr<Texture> pVisualizeTexture;
 	};
 }
 

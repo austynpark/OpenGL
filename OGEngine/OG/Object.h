@@ -30,7 +30,16 @@ namespace OG
         Object(const std::string& fileName);
 
         Object* CreateObject(const std::string& fileName, glm::vec3 position, glm::vec3 scale,
-            glm::vec3 color = glm::vec3(1.0f), glm::vec3 rotation_axis = glm::vec3(0.0f));
+            glm::vec3 rotation_axis = glm::vec3(1.0f), GLfloat angle = 0.0f, glm::vec3 color = glm::vec3(1.0f));
+
+        std::string name_;
+
+        glm::vec3 position_;
+        glm::vec3 scale_;
+        glm::vec3 rotation_axis_;
+        GLfloat rotation_angle_;
+        glm::vec3 color_;
+
 
         const std::string& getName() const; 
         const glm::vec3& getPosition() const; 
@@ -47,12 +56,6 @@ namespace OG
 		static std::unordered_map<std::string, std::unique_ptr<Model>> models_;
     private:
 
-        std::string name_;
-
-        glm::vec3 position_;
-        glm::vec3 scale_;
-        glm::vec3 rotation_axis_;
-        glm::vec3 color_;
 
 
     };

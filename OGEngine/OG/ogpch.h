@@ -47,5 +47,4 @@ End Header --------------------------------------------------------*/
 
 using std::cout;
 using std::endl;
-
 #endif // __OGPCH_H

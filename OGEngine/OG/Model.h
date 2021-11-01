@@ -14,6 +14,7 @@ End Header --------------------------------------------------------*/
 #define MODEL_H
 
 #include "OBJReader.h"
+#include "shader.hpp"
 
 namespace OG
 {
@@ -25,16 +26,20 @@ namespace OG
 
 		void LoadModel(const std::string& filepath);
 		
-		void Draw(GLenum mode);
+		void Draw(Shader* shader);
+
+		void RemapUV();
 
 		// Determine if normal should be drawn
 		bool drawNormal = false;
 		// If true, draw Face Normal or draw Vertex Normal
 		bool drawFaceNormal = true;
 
-
+		UVType uvType;
+		bool isNormMapping;
 	private:
 		std::vector<std::unique_ptr<Mesh>> pMeshes_;
+
 	};
 }
 

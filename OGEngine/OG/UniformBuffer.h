@@ -12,6 +12,7 @@ namespace OG
 		UniformBuffer(GLuint size, GLuint index, GLenum mode);
 
 		void Bind() const override;
+		void UnBind() const override;
 		void BindRange(GLuint offset, GLsizeiptr size) const;
 
 		/// <summary>
@@ -23,6 +24,8 @@ namespace OG
 		/// </param>
 		/// <param name="data"></param>
 		void AddSubData(GLsizei offset, GLsizei baseAlignment, const GLvoid* data);
+		void AddData(GLsizei size, const GLvoid* data);
+
 	private:
 		GLuint index_;
 	};

@@ -6,10 +6,15 @@
 
 OG::Texture::Texture(const std::string& fileName, GLuint texNum)
 {
+	/*
+	glCreateTextures(target, n, &id)
+	glT
+	*/
+
 	glGenTextures(1, &id_);
 	glBindTexture(GL_TEXTURE_2D, id_);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -19,8 +24,16 @@ OG::Texture::Texture(const std::string& fileName, GLuint texNum)
 	unsigned char* buffer = stbi_load(path.c_str(), &m_width, &m_height, &m_nrChannels, 0);
 	if (buffer)
 	{
+		GLenum format;
+
+		if (m_nrChannels == 3)
+			format = GL_RGB;
+		if (m_nrChannels == 4)
+			format = GL_RGBA;
+
+
 		std::cout << "Texture : " << path << "loaded" << std::endl;
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, buffer);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		stbi_image_free(buffer);
 	}
