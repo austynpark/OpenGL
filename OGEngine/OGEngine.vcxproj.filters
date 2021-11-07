@@ -202,10 +202,10 @@
     <None Include="OG\shaders\QuadVertexShader.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\SimpleFragmentShader.frag">
+    <None Include="OG\shaders\BlinnPhong.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\SimpleVertexShader.vert">
+    <None Include="OG\shaders\BlinnPhong.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="OG\shaders\PhongLighting.frag">

@@ -30,7 +30,7 @@ namespace OG
         Object(const std::string& fileName);
 
         Object* CreateObject(const std::string& fileName, glm::vec3 position, glm::vec3 scale,
-            glm::vec3 rotation_axis = glm::vec3(1.0f), GLfloat angle = 0.0f, glm::vec3 color = glm::vec3(1.0f));
+            glm::vec3 rotation_axis = glm::vec3(1.0f), GLfloat angle = 0.0f, glm::vec3 color = glm::vec3(0.0f));
 
         std::string name_;
 
@@ -38,7 +38,7 @@ namespace OG
         glm::vec3 scale_;
         glm::vec3 rotation_axis_;
         GLfloat rotation_angle_;
-        glm::vec3 color_;
+        glm::vec3 color_; // I_emissive
 
 
         const std::string& getName() const; 

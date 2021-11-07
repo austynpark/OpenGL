@@ -70,6 +70,12 @@ namespace OG
         return;
     }
 
+    void Scene::SetWindowSize(int width, int height)
+    {
+        _windowWidth = width;
+        _windowHeight = height;
+    }
+
     // Display : Per-frame execution of the scene
     int Scene::Display(double dt)
     {

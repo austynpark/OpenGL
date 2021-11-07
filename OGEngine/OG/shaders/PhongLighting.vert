@@ -11,9 +11,9 @@ struct Light
     float outer_cone;
     float fall_off;
 	int type;
-	vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+	vec3 Ia;
+    vec3 Id;
+    vec3 Is;
     vec3 position;
     vec3 direction;
 };
@@ -38,13 +38,14 @@ layout(std140) uniform LightInfo
 
 
 uniform mat4 model;
-uniform mat3 normalMatrix;
+uniform mat4 normalMatrix;
 uniform sampler2D diffuse_texture;
 uniform sampler2D specular_texture;
 uniform int uvType;
 uniform float zMin;
 uniform float zMax;
 uniform bool isNormMapping;
+uniform vec3 I_emissive;
 
 vec3 CalcDirLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, vec2 texCoords) 
 {
@@ -52,22 +53,24 @@ vec3 CalcDirLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, vec2 texCo
 
     float diff = max(dot(norm, lightDir), 0.0);
 
-    vec3 Ks = vec3(texture(specular_texture, texCoords));
+    vec4 Ks = (texture(specular_texture, texCoords));
     vec3 Kd = vec3(texture(diffuse_texture, texCoords));
 
-    vec3 specular = vec3(0.0);
+    float specular = 0.0f;
 
     if(diff > 0.0)
     {
 		vec3 reflectDir = 2 * dot(norm, lightDir) * norm - lightDir;
-        specular = Ks * pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r);
+        float spec = max(dot(viewDir, reflectDir), 0.0);
+        if(spec != 0)
+            specular = pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r * 32);
     }
 
-	vec3 ambient = light.ambient * Kd;
-    vec3 diffuse = light.diffuse * diff * Kd;
-    specular *= light.specular;
+	vec3 I_ambient = light.Ia * Kd;
+    vec3 I_diffuse = light.Id * diff * Kd;
+    vec3 I_specular = light.Is * Ks.xyz * specular;
 
-    return (ambient + diffuse + specular);
+    return (I_ambient + I_diffuse + I_specular);
 }
 
 vec3 CalcPointLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, vec2 texCoords)
@@ -76,25 +79,27 @@ vec3 CalcPointLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, vec2 tex
 
     float diff = max(dot(norm, lightDir), 0.0);
 
-    vec3 Ks = vec3(texture(specular_texture, texCoords));
+    vec4 Ks = (texture(specular_texture, texCoords));
     vec3 Kd = vec3(texture(diffuse_texture, texCoords));
 
-    vec3 specular = vec3(0.0);
+    float specular = 0.0f;
 
     if(diff > 0.0)
     {
-        vec3 reflectDir = reflect(-lightDir, norm);
-        specular = Ks * pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r);
+        vec3 reflectDir = 2 * dot(norm, lightDir) * norm - lightDir;
+        float spec = max(dot(viewDir, reflectDir), 0.0);
+        if(spec != 0)
+            specular = pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r * 32);
     }
 
     float dist = length(light.position - fragPos);
     float attenuation = min(1.0 / (att.x + att.y * dist + att.z * (dist * dist)), 1);
 
-	vec3 ambient = light.ambient * Kd;
-    vec3 diffuse = light.diffuse * diff * Kd;
-    specular *= light.specular;
+	vec3 I_ambient = light.Ia * Kd;
+    vec3 I_diffuse = light.Id * diff * Kd;
+    vec3 I_specular = Ks.xyz * light.Is;
 
-    return (ambient + diffuse + specular) * attenuation;
+    return (I_ambient + I_diffuse + I_specular) * attenuation;
 }
 
 vec3 CalcSpotLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, vec2 texCoords)
@@ -108,16 +113,18 @@ vec3 CalcSpotLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, vec2 texC
     // diffuse shading
     float diff = max(dot(norm, lightDir), 0.0);
     
-    vec3 Ks = vec3(0);
+    vec4 Ks = (texture(specular_texture, vUV));
     vec3 Kd = vec3(texture(diffuse_texture, texCoords));
 
-    vec3 reflectDir = reflect(-lightDir, norm);
+    float specular = 0.0f;
 
     // specular shading
     if(diff > 0)
     {
-        Ks = vec3(texture(specular_texture, vUV)) * 
-                pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r);
+        vec3 reflectDir = 2 * dot(norm, lightDir) * norm - lightDir;
+        float spec = max(dot(viewDir, reflectDir), 0.0);
+        if(spec != 0)
+            specular = pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r * 32);
     }
 
     
@@ -139,12 +146,10 @@ vec3 CalcSpotLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, vec2 texC
             ,  light.fall_off);
     }
 
-    vec3 diffuse = light.diffuse * diff * Kd;
-    vec3 specular = light.specular * Ks;  
+    vec3 I_diffuse = light.Id * diff * Kd;
+    vec3 I_specular = light.Is * Ks.xyz;  
  
-    diffuse *= attenuation * intesity;
-    specular *= attenuation * intesity;
-    return (diffuse + specular); 
+    return (I_diffuse + I_specular) * attenuation * intesity; 
 }
 
 vec2 CalcCubeMap(vec3 vEntity)
@@ -200,7 +205,7 @@ vec2 CalcCubeMap(vec3 vEntity)
 
 
 void main() {
-    vec3 norm = normalize(normalMatrix * vNormal);
+    vec3 norm = normalize((normalMatrix * vec4(vNormal, 0.0)).xyz);
 
     vec2 texCoords;
     
@@ -263,7 +268,9 @@ void main() {
             result += CalcPointLight(light[i], norm, viewDir, fragPos, texCoords);
     }
 
-    result += global_ambient; 
+    vec3 Kd = texture(diffuse_texture, texCoords).xyz;
+    result += I_emissive + global_ambient * Kd;
+
     float dist = length(camera - fragPos);
     float fogFactor = (far - dist) / (far - near);
 

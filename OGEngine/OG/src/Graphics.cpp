@@ -165,6 +165,11 @@ namespace OG
 	void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	{
 		glViewport(0, 0, width, height);
+
+		if (GRAPHICS->GetScene() != nullptr)
+		{
+			GRAPHICS->GetScene()->SetWindowSize(width, height);
+		}
 	}
 
 }

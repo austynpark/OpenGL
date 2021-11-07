@@ -6,12 +6,12 @@ File Name: README.md
 Purpose: Load files and render with OpenGL4
 Language: C++ / Visual Studio 2019
 Platform: Visual Studio 2019, OpenGL4.5, Windows 10 x64 
-Project: kyungook.park_CS330_1
+Project: kyungook.park_CS330
 Author: Austyn park / kyungook.park / 180001621
 Creation date: 10/01/21
 End Header --------------------------------------------------------*/
 
-# CS300 Assignment1
+# CS300 Assignment2
 
 ## README REQUIREMENTS
 
@@ -28,50 +28,68 @@ End Header --------------------------------------------------------*/
 
 ### (b) How To Use
 
+Central Object
 - Change the central object model through the imgui
 - Toggle drawing normal option, if it is not turned on, normal will not be drawn
+- Choose the texture entity and projection mode
+- 'Calculate UV' button should be pressed to refresh UV calculation on the CPU side.
+
+Shader
+- 'Reload Shader' will recompile the shader
+
+Light
+- Select specific lights te be used in the scene by changing the number of active lights
+- Select the light types. Default light type is a point light
+- Toggle between the three scenarios
+- Toggle 'Rotate' to pause/start the light rotation
+
+
 
 ### (c) Completed Part
 
-1. Setting up an OpenGL application
-2. Reading data from an OBJ file without errors
-3. Implementing vertex and fragment shaders corresponding to Phong Lighting
-4. Scene setup for the assignment is as per specification – Central object + rotating spheres
-	- Central object (OBJ file – drawn using GL_TRIANGLES)
-	- Spheres (Generate procedurally – drawn using GL_TRIANGLES)
-	- Orbit of the spheres (drawn using line segments – GL_LINES)
-5. Face & vertex normals calculation and display
+1. Shaders
+	- Phonh Lighting
+	- Phong Shading
+	- Blinn Shading
+
+2. Scene & Light Setup
+	- Point light
+	- Directional light
+	- Spotlight
+
+3. Material Setup
+	- CPU calculation
+	- GPU calculation
+	- Texture Entity
+
+4. Light properties
+	- Global constants passed by uniform / uniform block
+	- Per-light values
+
+5. All fo GUI features Implemented
 
 ### (d) Uncompleted Part
 
 - None
 
 ### (e) Relevant Source Code Location
-1. OpenGL application
-
+1. Light
 	- file path 	: OGEngine\OG\src
-	- file name 	: Graphics.cpp
-	- function name : Init
+	- file name 	: Scene_Assignment2.h
 
-2. OBJ file Loader
+2. Shader
 	- file path 	: OGEngine\OG\src
-	- file name 	: OBJReader.cpp
-	- function name : ReadOBJFile
-
-3. Shader
-	- file path 	: OGEngine\OG\src
-	- file name 	: PKO.frag, PKO.vert, shader.cpp
+	- file name 	: *SHADER_NAME*.frag, *SHADER_NAME*.vert, shader.cpp
 	- function name : LoadShaders
 
-4. Scene
+3. Scene
 	- file path 	: OGEngine\OG\src
-	- file name 	: Scene_Assignment.cpp,  Mesh.cpp
+	- file name 	: Scene_Assignment2.cpp,  Mesh.cpp
 	- function name : SetBuffer, SetOrbit, DrawOrbit / CreateSphere, calcVertexPositionForBoundingBox, Draw
 
-5. Face & vertex normal
+4. Uniform Buffer
 	- file path 	: OGEngine\OG\src
-	- file name 	: Mesh.cpp
-	- function name : calcVertexNormals, calcVertexNormalsForDisplay, DrawNormal
+	- file name 	: BufferObject.cpp, UniformBuffer.cpp
 
 ### (f) Machine Tested
 

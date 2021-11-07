@@ -185,9 +185,9 @@
     <None Include="OG\shaders\PhongShading.vert" />
     <None Include="OG\shaders\QuadFragmentShader.frag" />
     <None Include="OG\shaders\QuadVertexShader.vert" />
-    <None Include="OG\shaders\SimpleFragmentShader.frag" />
+    <None Include="OG\shaders\BlinnPhong.frag" />
     <None Include="OG\shaders\PKO.frag" />
-    <None Include="OG\shaders\SimpleVertexShader.vert" />
+    <None Include="OG\shaders\BlinnPhong.vert" />
     <None Include="OG\shaders\PKO.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

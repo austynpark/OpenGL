@@ -23,7 +23,7 @@ uniform mat4 normalMatrix;
 
 void main()
 {
-    vs_out.fragNormal = (normalMatrix * vec4(vNormal, 0.0)).xyz; 
+    vs_out.fragNormal = (normalMatrix * vec4(vNormal, 0.0f)).xyz; 
     vs_out.fragPos = (model * vec4(vPos, 1.0)).xyz;
     vs_out.TexCoords = vUV;
     vs_out.Pos = vPos;

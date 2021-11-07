@@ -28,7 +28,7 @@ pCamera_(std::make_unique<Camera>(glm::vec3(0.0f, 3.0f, 10.0f))),
 pDiffuseTexture(std::make_unique<Texture>("metal_roof_diff_512x512.png", 0)), 
 pSpecularTexture(std::make_unique<Texture>("metal_roof_spec_512x512.png", 1)),
 pVisualizeTexture(std::make_unique<Texture>("visualize.png", 0)),
-pOrbit(std::make_unique<Orbit>(5.0f, 100)),
+pOrbit(std::make_unique<Orbit>(2.5f, 100)),
 plane_(std::move(OBJECT->CreateObject("quad", glm::vec3(0.0f, -2.f, 0.0f), glm::vec3(15.0f), glm::vec3(1.0f, 0.0f, 0.0f), 90.0f)))
 {
     num_of_lights = 1;
@@ -47,6 +47,7 @@ int OG::Scene_Assignment2::Init()
 {
     shaders_["PhongShading"] = std::make_unique<Shader>("PhongShading.vert", "PhongShading.frag");
     shaders_["PhongLighting"] = std::make_unique<Shader>("PhongLighting.vert", "PhongLighting.frag");
+    shaders_["BlinnPhong"] = std::make_unique<Shader>("BlinnPhong.vert", "BlinnPhong.frag");
     
     current_shader = "PhongShading";
     
@@ -66,6 +67,16 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
     OBJECT->models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
     OBJECT->models_["sphere_mesh"] = std::make_unique<Model>(Mesh::CreateSphere(0.1f, 36, 18));
+    OBJECT->models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
+    OBJECT->models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
+    OBJECT->models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
+    OBJECT->models_["lucy_princeton"] = std::make_unique<Model>("OG/models/lucy_princeton.obj");
+    OBJECT->models_["quad"] = std::make_unique<Model>("OG/models/quad.obj");
+    OBJECT->models_["sphere_modified"] = std::make_unique<Model>("OG/models/sphere_modified.obj");
+    OBJECT->models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
+    OBJECT->models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
+    OBJECT->models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
+
 
 
 
@@ -98,8 +109,7 @@ int OG::Scene_Assignment2::preRender(double dt)
 
     for (int i = 0; i < num_of_lights; ++i)
     {
-        float theta = i * 360.0f / num_of_lights;
-
+        float theta = (i * 360.0f / num_of_lights) + angleOfRotation;
         spheres_[i]->position_ = { pOrbit->radius * cos(glm::radians(theta)), 0.0f, pOrbit->radius * sin(glm::radians(theta)) };
     }
 
@@ -149,13 +159,12 @@ int OG::Scene_Assignment2::Render(double dt)
         glm::vec3 scale = spheres_[i]->getScale();
         glm::vec3 transform = spheres_[i]->getPosition();
 
-        model = glm::rotate(angleOfRotation, glm::vec3(0, 1, 0)) * glm::translate(transform) * glm::scale(scale);
-        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
+        model = glm::translate(transform) * glm::scale(scale);
 
-        lightShader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
         lightShader->SetUniformMatrix4fv("model", model);
+        lightShader->SetUniform4fv("diffuse", light[i].diffuse);
 
-        light[i].position = model * glm::vec4(spheres_[i]->position_, 1.0f);
+        light[i].position = glm::vec4(spheres_[i]->position_, 0.0f);
         light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
 
         
@@ -184,10 +193,10 @@ int OG::Scene_Assignment2::Render(double dt)
         glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(obj->rotation_angle_), obj->rotation_axis_) * glm::scale(scale);
 
         glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
-        //shaders_[current_shader]->SetUniformMatrix3fv("normalMatrix", normalMatrix);
+        shaders_[current_shader]->SetUniformMatrix4fv("normalMatrix", normalMatrix);
 
         shaders_[current_shader]->SetUniformMatrix4fv("model", model);
-
+        shaders_[current_shader]->SetUniform3fv("I_emissive", obj->color_);
         if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
         {
             OBJECT->models_[obj->getName()]->Draw(shaders_[current_shader].get());
@@ -204,14 +213,15 @@ int OG::Scene_Assignment2::Render(double dt)
 
 	pOrbit->DrawOrbit();
 
-
     glm::vec3 scale = plane_->getScale();
     glm::vec3 transform = plane_->getPosition();
     glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(-90.0f), plane_->rotation_axis_) * glm::scale(scale);
     glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
 
     shaders_[current_shader]->SetUniformMatrix4fv("model", model);
-    //shaders_[current_shader]->SetUniformMatrix3fv("normalMatrix", normalMatrix);
+    shaders_[current_shader]->SetUniformMatrix4fv("normalMatrix", normalMatrix);
+    shaders_[current_shader]->SetUniform3fv("I_emissive", plane_->color_);
+
     OBJECT->models_[plane_->getName()]->Draw(shaders_[current_shader].get());
 
     return 0;
@@ -220,7 +230,7 @@ int OG::Scene_Assignment2::Render(double dt)
 int OG::Scene_Assignment2::postRender(double dt)
 {
     if (isRotating)
-        angleOfRotation += static_cast<float>(dt);
+        angleOfRotation += rotation_speed * static_cast<float>(dt) * 100.0f;
 
 	return 0;
 }
@@ -279,12 +289,12 @@ void OG::Scene_Assignment2::SetupImGui(GLFWwindow* pWindow)
 
 void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
 {
-    bool show = true;
+    //bool show = true;
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::ShowDemoWindow(&show);
+    //ImGui::ShowDemoWindow(&show);
 
     {
         ImGui::Begin("CS300 Assignment 2");
@@ -305,6 +315,8 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
             ImGui::EndCombo();
         }
 
+		ImGui::ColorEdit3("Emissive", glm::value_ptr(objects_[0]->color_));
+
         if (ImGui::RadioButton("face normal", drawFaceNormal == true)) { drawFaceNormal = true; } ImGui::SameLine();
         if (ImGui::RadioButton("vertex normal", !drawFaceNormal == true)) { drawFaceNormal = false; }
         ImGui::Checkbox("Draw Normal Vector", &is_normal_vector_on);
@@ -316,12 +328,7 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
         ImGui::Combo("Texture Entity", (int*)&OBJECT->models_[current_item]->isNormMapping, "POSITION\0NORMAL\0\0");
         ImGui::Combo("Projection Mode", (int*)&OBJECT->models_[current_item]->uvType, "PLANAR\0CYLINDRICAL\0SPHERICAL\0\0");
 
-        ImGui::Spacing();
-
-        if (ImGui::RadioButton("calculate on CPU", bCalcOnCPU == true)) { bCalcOnCPU = true; } ImGui::SameLine();
-        if (ImGui::RadioButton("calculate on GPU", bCalcOnCPU == false)) { bCalcOnCPU = false; }
-
-        ImGui::Spacing();
+		ImGui::Spacing();
 
         if (bCalcOnCPU)
         {
@@ -330,6 +337,11 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
                 OBJECT->models_[current_item]->RemapUV();
             }
         }
+
+        ImGui::Spacing();
+
+        if (ImGui::RadioButton("calculate on CPU", bCalcOnCPU == true)) { bCalcOnCPU = true; } ImGui::SameLine();
+        if (ImGui::RadioButton("calculate on GPU", bCalcOnCPU == false)) { bCalcOnCPU = false; }
 
         ImGui::Separator();
         ImGui::Spacing();
@@ -369,7 +381,13 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
 
         if (ImGui::CollapsingHeader("Light"))
         {
+            ImGui::Text("Lighting Scenarios");
+            if (ImGui::Button("Scenario 1")) setScenario1(); ImGui::SameLine();
+            if (ImGui::Button("Scenario 2")) setScenario2(); ImGui::SameLine();
+            if (ImGui::Button("Scenario 3")) setScenario3();
+
             ImGui::SliderFloat("Orbit Radius", &pOrbit->radius, 1.0f, 10.0f);
+            ImGui::SliderFloat("Rotation Speed", &rotation_speed, -3.0f, 3.0f);
             ImGui::Checkbox("Rotate", &isRotating);
 
             ImGui::Separator();
@@ -487,3 +505,133 @@ void OG::Orbit::SetupBuffer()
     }
 }
 // Orbit Function End
+
+void OG::Scene_Assignment2::setScenario1()
+{
+    pOrbit->radius = 2.5f;
+    rotation_speed = 1.0f;
+
+    num_of_lights = 4;
+
+    light[0].type = lightType::E_POINT;
+    light[0].ambient = glm::vec4(1.0f);
+    light[0].diffuse = glm::vec4(1.0f);
+    light[0].specular = glm::vec4(1.0f);
+
+	light[1].type = lightType::E_POINT;
+    light[1].ambient = glm::vec4(1.0f);
+    light[1].diffuse = glm::vec4(1.0f);
+    light[1].specular = glm::vec4(1.0f);
+
+	light[2].type = lightType::E_POINT;
+    light[2].ambient = glm::vec4(1.0f);
+    light[2].diffuse = glm::vec4(1.0f);
+    light[2].specular = glm::vec4(1.0f);
+
+	light[3].type = lightType::E_POINT;
+    light[3].ambient = glm::vec4(1.0f);
+    light[3].diffuse = glm::vec4(1.0f);
+    light[3].specular = glm::vec4(1.0f);
+}
+
+void OG::Scene_Assignment2::setScenario2()
+{
+	pOrbit->radius = 2.5f;
+    rotation_speed = 3.0f;
+
+    num_of_lights = 6;
+
+    light[0].type = lightType::E_SPOT;
+    light[0].ambient = glm::vec4(1.0f, 0.5f, 0.5f, 1.0f);
+    light[0].diffuse = glm::vec4(1.0f, 0.5f, 0.5f, 1.0f);
+    light[0].specular = glm::vec4(1.0f, 0.5f, 0.5f, 1.0f);
+    light[0].cutOff = 45.0f;
+    light[0].outerCutOff = 60.0f;
+    light[0].fallOut = 5.0f;
+
+	light[1].type = lightType::E_SPOT;
+    light[1].ambient = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
+    light[1].diffuse = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
+    light[1].specular = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
+    light[1].cutOff = 45.0f;
+    light[1].outerCutOff = 60.0f;
+    light[1].fallOut = 5.0f;
+
+	light[2].type = lightType::E_SPOT;
+    light[2].ambient = glm::vec4(1.0f, 0.5f, 1.0f, 1.0f);
+    light[2].diffuse = glm::vec4(1.0f, 0.5f, 1.0f, 1.0f);
+    light[2].specular = glm::vec4(1.0f, 0.5f, 1.0f, 1.0f);
+    light[2].cutOff = 45.0f;
+    light[2].outerCutOff = 60.0f;
+    light[2].fallOut = 5.0f;
+
+	light[3].type = lightType::E_SPOT;
+    light[3].ambient = glm::vec4(0.5f, 1.0f, 1.0f, 1.0f);
+    light[3].diffuse = glm::vec4(0.5f, 1.0f, 1.0f, 1.0f);
+    light[3].specular = glm::vec4(0.5f, 1.0f, 1.0f, 1.0f);
+    light[3].cutOff = 45.0f;
+    light[3].outerCutOff = 60.0f;
+    light[3].fallOut = 5.0f;
+
+	light[4].type = lightType::E_SPOT;
+    light[4].ambient = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
+    light[4].diffuse = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
+    light[4].specular = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
+    light[4].cutOff = 45.0f;
+    light[4].outerCutOff = 60.0f;
+    light[4].fallOut = 5.0f;
+
+	light[5].type = lightType::E_SPOT;
+    light[5].ambient = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+    light[5].diffuse = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+    light[5].specular = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+    light[5].cutOff = 45.0f;
+    light[5].outerCutOff = 60.0f;
+    light[5].fallOut = 5.0f;
+}
+
+void OG::Scene_Assignment2::setScenario3()
+{
+	pOrbit->radius = 3.5f;
+    rotation_speed = -3.0f;
+
+    num_of_lights = 6;
+
+	light[0].type = lightType::E_POINT;
+    light[0].ambient = glm::vec4(1.0f);
+    light[0].diffuse = glm::vec4(1.0f);
+    light[0].specular = glm::vec4(1.0f);
+
+	light[1].type = lightType::E_POINT;
+    light[1].ambient = glm::vec4(1.0f);
+    light[1].diffuse = glm::vec4(1.0f);
+    light[1].specular = glm::vec4(1.0f);
+
+	light[2].type = lightType::E_SPOT;
+    light[2].ambient = glm::vec4(0.5f, 1.0f, 1.0f, 1.0f);
+    light[2].diffuse = glm::vec4(0.5f, 1.0f, 1.0f, 1.0f);
+    light[2].specular = glm::vec4(0.5f, 1.0f, 1.0f, 1.0f);
+
+    light[3].type = lightType::E_SPOT;
+    light[3].ambient = glm::vec4(1.0f, 0.5f, 1.0f, 1.0f);
+    light[3].diffuse = glm::vec4(1.0f, 0.5f, 1.0f, 1.0f);
+    light[3].specular = glm::vec4(1.0f, 0.5f, 1.0f, 1.0f);
+
+    light[2].cutOff = 45.0f;
+    light[2].outerCutOff = 60.0f;
+    light[2].fallOut = 5.0f;
+
+	light[4].type = lightType::E_DIR;
+    light[4].ambient = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
+    light[4].diffuse = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
+    light[4].specular = glm::vec4(0.0f, 0.5f, 0.5f, 1.0f);
+
+	light[5].type = lightType::E_SPOT;
+    light[5].ambient = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+    light[5].diffuse = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+    light[5].specular = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+
+    light[5].cutOff = 45.0f;
+    light[5].outerCutOff = 60.0f;
+    light[5].fallOut = 5.0f;
+}

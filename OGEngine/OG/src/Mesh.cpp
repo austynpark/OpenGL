@@ -318,7 +318,7 @@ namespace OG
         std::vector< std::set< glm::vec3 , compareVec> >  vNormalSet;
         vNormalSet.resize(numVertices);
 
-        setNormalLength(1.0f);
+        setNormalLength(0.5f);
 
         // For every face
         GLuint index = 0, face_index = 0;

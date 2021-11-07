@@ -17,9 +17,9 @@ struct Light
     float outer_cone;
     float fall_off;
 	int type;
-	vec3 Ia;
-    vec3 Id;
-    vec3 Is;
+	vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
     vec3 position;
     vec3 direction;
 };
@@ -46,29 +46,26 @@ uniform vec3 I_emissive;
 
 vec3 CalcDirLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords) 
 {
-    // Object to Light
     vec3 lightDir = normalize(-light.direction);
 
     float diff = max(dot(norm, lightDir), 0.0);
 
     vec4 Ks = texture(specular_texture, texCoords);
-    vec3 Kd = vec3(texture(diffuse_texture, texCoords));
+    vec3 Kd = texture(diffuse_texture, texCoords).xyz;
 
-    float specular = 0;
+    vec3 specular = vec3(0.0);
 
     if(diff > 0.0)
     {
-		vec3 reflectDir = 2 * dot(norm, lightDir) * norm - lightDir;
-        float spec = max(dot(viewDir, reflectDir), 0.0);
-        if(spec != 0)
-            specular = pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r * 32);
+        vec3 h = normalize( viewDir + lightDir);
+        specular = pow(max(dot(norm, h), 0.0), Ks.r * Ks.r * 32) * Ks.xyz;
     }
 
-	vec3 I_ambient = light.Ia * Kd;
-    vec3 I_diffuse = light.Id * diff * Kd;
-    vec3 I_specular = light.Is * Ks.xyz * specular;
+	vec3 ambient = light.ambient * Kd;
+    vec3 diffuse = light.diffuse * diff * Kd;
+    specular *= light.specular;
 
-    return (I_ambient + I_diffuse + I_specular);
+    return (ambient + diffuse + specular);
 }
 
 vec3 CalcPointLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords)
@@ -78,26 +75,24 @@ vec3 CalcPointLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords)
     float diff = max(dot(norm, lightDir), 0.0);
 
     vec4 Ks = texture(specular_texture, texCoords);
-    vec3 Kd = vec3(texture(diffuse_texture, texCoords));
+    vec3 Kd = texture(diffuse_texture, texCoords).xyz;
 
-    float specular = 0.0f;
+    vec3 specular = vec3(0.0);
 
     if(diff > 0.0)
     {
-        vec3 reflectDir = 2 * dot(norm, lightDir) * norm - lightDir;
-        float spec = max(dot(viewDir, reflectDir), 0.0);
-        if(spec != 0)
-            specular = pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r * 32);
+        vec3 h = normalize( viewDir + lightDir );
+        specular = pow(max(dot(norm, h), 0.0), Ks.r * Ks.r * 32) * Ks.xyz;
     }
 
     float dist = length(light.position - fs_in.fragPos);
     float attenuation = min(1.0 / (att.x + att.y * dist + att.z * (dist * dist)), 1);
 
-	vec3 I_ambient = light.Ia * Kd;
-    vec3 I_diffuse = light.Id * diff * Kd;
-    vec3 I_specular = light.Is * Ks.xyz * specular;
-    
-    return (I_ambient + I_diffuse + I_specular) * attenuation;
+	vec3 ambient = light.ambient * Kd;
+    vec3 diffuse = light.diffuse * diff * Kd;
+    specular *= light.specular;
+
+    return (ambient + diffuse + specular) * attenuation;
 }
 
 vec3 CalcSpotLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords)
@@ -111,41 +106,43 @@ vec3 CalcSpotLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords)
     // diffuse shading
     float diff = max(dot(norm, lightDir), 0.0);
     
-    vec4 Ks = texture(specular_texture, texCoords);
+    vec4 Ks = vec4(0);
     vec3 Kd = vec3(texture(diffuse_texture, texCoords));
 
-    float specular = 0.0f;
+    vec3 h = normalize(viewDir + lightDir);
+
     // specular shading
     if(diff > 0)
     {
-	    vec3 reflectDir = 2 * dot(norm, lightDir) * norm - lightDir;
-        float spec = max(dot(viewDir, reflectDir), 0.0);
-        if(spec != 0)
-            specular = pow(max(dot(viewDir, reflectDir), 0.0), Ks.r * Ks.r * 32);
+        Ks = texture(specular_texture, texCoords); 
+        Ks *= pow(max(dot(norm, h), 0.0), Ks.r * Ks.r * 32);
     }
 
+    
     // attenuation
     float dist = length(light.position - fs_in.fragPos);
     float attenuation = min(1.0 / (att.x + att.y * dist + att.z * (dist * dist)), 1);    
     
     float LdotD = max(dot(-lightDir, normalize(light.direction)), 0.0);
-    float intensity = 0;
+    float intesity = 0;
 
     if(LdotD > cos(theta))
     {
-        intensity = 1;
+        intesity = 1;
     }
     else if(LdotD >= cos(phi))
     {
-        intensity = pow(
+        intesity = pow(
             (LdotD - cos(phi)) / (cos(theta) - cos(phi))
             ,  light.fall_off);
     }
 
-    vec3 I_diffuse = light.Id * diff * Kd;
-    vec3 I_specular = light.Is * Ks.xyz * specular;
-    
-    return (I_diffuse + I_specular) * attenuation * intensity;
+    vec3 diffuse = light.diffuse * diff * Kd;
+    vec3 specular = light.specular * Ks.xyz;  
+ 
+    diffuse *= attenuation * intesity;
+    specular *= attenuation * intesity;
+    return (diffuse + specular); 
 }
 
 vec2 CalcCubeMap(vec3 vEntity)
@@ -259,7 +256,7 @@ void main() {
         else
             result += CalcPointLight(light[i], norm, viewDir, texCoords);
     }
- 
+
     vec3 Kd = texture(diffuse_texture, texCoords).xyz;
     result += I_emissive + global_ambient * Kd;
 

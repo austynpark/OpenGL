@@ -88,6 +88,10 @@ namespace OG
 
 		void keyboardInput(GLFWwindow* pWindow, float dt) override;
 
+		void setScenario1();
+		void setScenario2();
+		void setScenario3();
+
 	private:
 		// This is the non-software engineered portion of the code
 		// Go ahead and modularize the VAO and VBO setup into
@@ -123,6 +127,7 @@ namespace OG
 		std::vector<std::unique_ptr<Object>> spheres_;
 		std::unique_ptr<Orbit> pOrbit;
 		float angleOfRotation = 0.0f;
+		float rotation_speed = 1.0f;
 		bool isRotating;
 		
 		// Uniform Block Object
@@ -130,7 +135,7 @@ namespace OG
 		std::unique_ptr<UniformBuffer> pUBO_light;
 
 		// Global Uniform Block Var //
-		glm::vec3 att{ 1.0f,0.09f,0.032f };
+		glm::vec3 att{ 1.0f,0.22f,0.2f };
 		glm::vec3 global_ambient{0.0f, 0.0f, 0.1f};
 		glm::vec3 fog_color{ 0.2f, 0.4f, 0.55f };
 		float near = 0.1f;

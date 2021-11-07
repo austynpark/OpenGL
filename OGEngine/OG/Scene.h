@@ -60,6 +60,8 @@ namespace OG
         virtual void DrawImGui(GLFWwindow* pWindow) = 0;
         virtual void CleanupImGui() = 0;
         virtual void keyboardInput(GLFWwindow* pWindow, float dt) = 0;
+
+        void SetWindowSize(int width, int height);
     protected:
         int _windowHeight, _windowWidth;
 
