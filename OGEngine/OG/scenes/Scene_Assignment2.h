@@ -15,9 +15,6 @@ End Header --------------------------------------------------------*/
 #define SCENE_ASSIGNMENT2_H
 
 #include "Scene.h"
-#include "shader.hpp"
-#include "Texture.h"
-
 #include "UVType.h"
 
 namespace OG 
@@ -27,6 +24,10 @@ namespace OG
 	class UniformBuffer;
 	class ArrayBufferObject;
 	class BufferObject;
+	class Texture;
+	class Shader;
+	class FBO;
+	class CubeMap;
 
 	enum lightType : int
 	{
@@ -116,7 +117,6 @@ namespace OG
 		std::unique_ptr<Camera> pCamera_;
 
 		std::vector<std::unique_ptr<Object>> objects_;
-		std::unique_ptr<Object> plane_;
 		// Draw Normal
 		bool is_normal_vector_on;
 		bool drawFaceNormal;
@@ -149,9 +149,16 @@ namespace OG
 		bool bVisualizeTex;
 		bool bCalcOnCPU;
 		std::unique_ptr<Texture> pVisualizeTexture;
+
+		// Cube Map
+		std::unique_ptr<CubeMap> skybox;
+
+		// Frame Buffer Object
+		std::unique_ptr<FBO> pFBO;
+		void setFramebuffer();
+		void updateFramebuffer();
 	};
 }
-
 
 #endif // !SCENE_ASSIGNMENT2_H
 

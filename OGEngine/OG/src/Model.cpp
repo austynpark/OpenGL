@@ -22,42 +22,29 @@ namespace OG
 
 	Model::Model(Mesh* mesh) : uvType(UVType::PLANAR_UV)
 	{
-		pMeshes_.emplace_back(std::move(mesh));
+		pMesh_.reset(mesh);
 		mesh->SetBuffer();
 	}
 
 	void Model::LoadModel(const std::string& filepath)
 	{
-		OBJReader::getInstance()->ReadOBJFile(filepath, pMeshes_, false);
+		OBJReader::getInstance()->ReadOBJFile(filepath, pMesh_, false);
 
 		// This is unnecessary since Mesh constructor calls setbuffer 
-		for (const auto& mesh : pMeshes_)
-		{
-			mesh->SetBuffer();
-		}
+		pMesh_->SetBuffer();
 	}
 
-	void Model::Draw(Shader* shader)
+	void Model::Draw(Shader* shader, bool drawNormal, bool drawFaceNormal)
 	{
-		for (const auto& mesh : pMeshes_)
-		{
-			shader->SetUniform1f("zMin", mesh->boundingBox[0].z);
-			shader->SetUniform1f("zMax", mesh->boundingBox[1].z);
-
-			shader->SetUniform1b("isNormMapping", isNormMapping);
-			mesh->Draw();
-			if (drawNormal) {
-				mesh->DrawNormal(drawFaceNormal);
-			}
+		pMesh_->Draw();
+		if (drawNormal) {
+			pMesh_->DrawNormal(drawFaceNormal);
 		}
 	}
 	void Model::RemapUV()
 	{
-		for (const auto& mesh : pMeshes_)
-		{
-			mesh->calcUVs(uvType, isNormMapping);
-			mesh->MapVertexBuffer();
-			mesh->SetBuffer();
-		}
+		pMesh_->calcUVs(uvType, isNormMapping);
+		pMesh_->MapVertexBuffer();
+		pMesh_->SetBuffer();
 	}
 }

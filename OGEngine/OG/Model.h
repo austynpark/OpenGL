@@ -26,20 +26,18 @@ namespace OG
 
 		void LoadModel(const std::string& filepath);
 		
-		void Draw(Shader* shader);
+		void Draw(Shader* shader, bool drawNormal = false, bool drawFaceNormal = true);
 
 		void RemapUV();
-
-		// Determine if normal should be drawn
-		bool drawNormal = false;
-		// If true, draw Face Normal or draw Vertex Normal
-		bool drawFaceNormal = true;
+		
 
 		UVType uvType;
 		bool isNormMapping;
-	private:
-		std::vector<std::unique_ptr<Mesh>> pMeshes_;
 
+		// TODO : make vector of mesh and store it separately & private
+		std::unique_ptr<Mesh> pMesh_;
+
+	private:
 	};
 }
 

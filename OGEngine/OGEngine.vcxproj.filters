@@ -37,6 +37,12 @@
     <Filter Include="Source Files\imgui\src">
       <UniqueIdentifier>{ceb98405-5b9b-4239-a807-2f7d98ebc940}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\OG\buffers">
+      <UniqueIdentifier>{7ad86a2f-c8f2-4060-a1c5-c3d39313473a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OG\buffers\Private">
+      <UniqueIdentifier>{ea635582-5e2f-4550-9213-cbbf78a99c65}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OG\src\Graphics.cpp">
@@ -90,12 +96,6 @@
     <ClCompile Include="OG\src\Model.cpp">
       <Filter>Source Files\OG\source</Filter>
     </ClCompile>
-    <ClCompile Include="OG\src\BufferObject.cpp">
-      <Filter>Source Files\OG\source</Filter>
-    </ClCompile>
-    <ClCompile Include="OG\src\ArrayBufferObject.cpp">
-      <Filter>Source Files\OG\source</Filter>
-    </ClCompile>
     <ClCompile Include="OG\src\Camera.cpp">
       <Filter>Source Files\OG\source</Filter>
     </ClCompile>
@@ -105,10 +105,22 @@
     <ClCompile Include="OG\scenes\Scene_Assignment2.cpp">
       <Filter>Source Files\OG\scenes</Filter>
     </ClCompile>
-    <ClCompile Include="OG\src\UniformBuffer.cpp">
-      <Filter>Source Files\OG\source</Filter>
+    <ClCompile Include="OG\src\ArrayBufferObject.cpp">
+      <Filter>Source Files\OG\buffers\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\BufferObject.cpp">
+      <Filter>Source Files\OG\buffers\Private</Filter>
     </ClCompile>
     <ClCompile Include="OG\src\Texture.cpp">
+      <Filter>Source Files\OG\buffers\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\UniformBuffer.cpp">
+      <Filter>Source Files\OG\buffers\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\FBO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OG\src\CubeMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -164,16 +176,7 @@
     <ClInclude Include="OG\Model.h">
       <Filter>Source Files\OG</Filter>
     </ClInclude>
-    <ClInclude Include="OG\BufferObject.h">
-      <Filter>Source Files\OG</Filter>
-    </ClInclude>
-    <ClInclude Include="OG\ArrayBufferObject.h">
-      <Filter>Source Files\OG</Filter>
-    </ClInclude>
     <ClInclude Include="OG\Camera.h">
-      <Filter>Source Files\OG</Filter>
-    </ClInclude>
-    <ClInclude Include="OG\VertexAttributeManager.h">
       <Filter>Source Files\OG</Filter>
     </ClInclude>
     <ClInclude Include="OG\Object.h">
@@ -185,24 +188,36 @@
     <ClInclude Include="OG\scenes\Scene_Assignment2.h">
       <Filter>Source Files\OG\scenes</Filter>
     </ClInclude>
-    <ClInclude Include="OG\UniformBuffer.h">
-      <Filter>Source Files\OG</Filter>
-    </ClInclude>
-    <ClInclude Include="OG\Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OG\GLApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OG\UVType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OG\BufferObject.h">
+      <Filter>Source Files\OG\buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\ArrayBufferObject.h">
+      <Filter>Source Files\OG\buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\UniformBuffer.h">
+      <Filter>Source Files\OG\buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\VertexAttributeManager.h">
+      <Filter>Source Files\OG\buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\Texture.h">
+      <Filter>Source Files\OG\buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\FBO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\CubeMap.h">
+      <Filter>Source Files\OG</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="OG\shaders\QuadVertexShader.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\BlinnPhong.frag">
+    <None Include="OG\shaders\CubeMap.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="OG\shaders\BlinnPhong.vert">
@@ -220,13 +235,16 @@
     <None Include="OG\shaders\PhongShading.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="OG\shaders\QuadFragmentShader.frag">
+    <None Include="OG\shaders\CubeMap.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="OG\shaders\PKO.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="OG\shaders\PKO.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\BlinnPhong.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
   </ItemGroup>

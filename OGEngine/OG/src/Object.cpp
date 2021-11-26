@@ -13,6 +13,7 @@ Creation date: 2021/09/29
 End Header --------------------------------------------------------*/
 #include "ogpch.h"
 #include "Object.h"
+#include "shader.hpp"
 
 namespace OG 
 {
@@ -95,5 +96,13 @@ namespace OG
 	void Object::setName(const char* name)
 	{
 		name_ = name;
+	}
+	void Object::draw(Shader* shader)
+	{
+		shader->SetUniform1f("zMin", models_[name_]->pMesh_->boundingBox[0].z);
+		shader->SetUniform1f("zMax", models_[name_]->pMesh_->boundingBox[1].z);
+
+		shader->SetUniform1b("isNormMapping", models_[name_]->isNormMapping);
+		models_[name_]->Draw(shader, drawNormal, drawFaceNormal);
 	}
 }

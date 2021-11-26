@@ -20,7 +20,10 @@ End Header --------------------------------------------------------*/
 #include "UniformBuffer.h"
 #include "ArrayBufferObject.h"
 #include "VertexAttributeManager.h"
-
+#include "Texture.h"
+#include "shader.hpp"
+#include "FBO.h"
+#include "CubeMap.h"
 
 OG::Scene_Assignment2::Scene_Assignment2(int windowWidth, int windowHeight) : Scene(windowWidth, windowHeight),
 shaders_(), lightShader(std::make_unique<Shader>("light_object.vert", "light_object.frag")),
@@ -29,7 +32,8 @@ pDiffuseTexture(std::make_unique<Texture>("metal_roof_diff_512x512.png", 0)),
 pSpecularTexture(std::make_unique<Texture>("metal_roof_spec_512x512.png", 1)),
 pVisualizeTexture(std::make_unique<Texture>("visualize.png", 0)),
 pOrbit(std::make_unique<Orbit>(2.5f, 100)),
-plane_(std::move(OBJECT->CreateObject("quad", glm::vec3(0.0f, -2.f, 0.0f), glm::vec3(15.0f), glm::vec3(1.0f, 0.0f, 0.0f), 90.0f)))
+pFBO(std::make_unique<FBO>(windowWidth, windowHeight)),
+skybox(std::make_unique<CubeMap>())
 {
     num_of_lights = 1;
     isRotating = true;
@@ -45,6 +49,8 @@ OG::Scene_Assignment2::~Scene_Assignment2()
 
 int OG::Scene_Assignment2::Init()
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     shaders_["PhongShading"] = std::make_unique<Shader>("PhongShading.vert", "PhongShading.frag");
     shaders_["PhongLighting"] = std::make_unique<Shader>("PhongLighting.vert", "PhongLighting.frag");
     shaders_["BlinnPhong"] = std::make_unique<Shader>("BlinnPhong.vert", "BlinnPhong.frag");
@@ -63,6 +69,7 @@ int OG::Scene_Assignment2::Init()
         OBJECT->CreateObject("cube2",glm::vec3(0.0f), glm::vec3(1.0f))
     ));
     
+    OBJECT->models_["cube"] = std::make_unique<Model>("OG/models/cube.obj");
     OBJECT->models_["4Sphere"] = std::make_unique<Model>("OG/models/4Sphere.obj");
     OBJECT->models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
     OBJECT->models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
@@ -77,15 +84,18 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
     OBJECT->models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
 
-
-
-
     for (int i = 0; i < 16; ++i)
     {
         spheres_.emplace_back(std::move(
             OBJECT->CreateObject("sphere_mesh", glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f))
         ));
     }
+    
+    const char* faces[] = { "skybox/right.png",
+        "skybox/left.png", "skybox/top.png", "skybox/bottom.png", "skybox/front.png", "skybox/back.png"
+    };
+
+    skybox->Init(faces, 2);
 
     return 0;
 }
@@ -106,20 +116,34 @@ int OG::Scene_Assignment2::preRender(double dt)
 
     glCullFace(GL_BACK);
 
-
     for (int i = 0; i < num_of_lights; ++i)
     {
         float theta = (i * 360.0f / num_of_lights) + angleOfRotation;
         spheres_[i]->position_ = { pOrbit->radius * cos(glm::radians(theta)), 0.0f, pOrbit->radius * sin(glm::radians(theta)) };
     }
 
-    lightShader->SetUniformBlock("Transforms", 0U);
+    return 0;
+}
+
+int OG::Scene_Assignment2::Render(double dt)
+{
+    // By converting view matrix 4x4 to 3x3, remove translation section
+    glm::mat4 view = glm::mat4(glm::mat3(pCamera_->GetViewMatrix()));
+    glm::mat4 projection = pCamera_->GetProjMatrix((float)_windowWidth, (float)_windowHeight);
+
+    glDepthMask(GL_FALSE);
+    skybox->Render(view, projection);
+    glDepthMask(GL_TRUE);
+
+	shaders_[current_shader]->Use();
+
+	lightShader->SetUniformBlock("Transforms", 0U);
 
 	shaders_[current_shader]->SetUniformBlock("Transforms", 0U);
     shaders_[current_shader]->SetUniformBlock("LightInfo", 1U);
 
-    shaders_[current_shader]->SetUniform1i("diffuse_texture", 0);
-    shaders_[current_shader]->SetUniform1i("specular_texture", 1);
+    shaders_[current_shader]->SetUniform1i("diffuse_texture", pDiffuseTexture->texNum_);
+    shaders_[current_shader]->SetUniform1i("specular_texture", pSpecularTexture->texNum_);
 
     if (bCalcOnCPU)
     {
@@ -130,15 +154,7 @@ int OG::Scene_Assignment2::preRender(double dt)
         shaders_[current_shader]->SetUniform1i("uvType", (GLint)(OBJECT->models_[current_item]->uvType + 1));
     }
 
-    return 0;
-}
-
-int OG::Scene_Assignment2::Render(double dt)
-{
-    shaders_[current_shader]->Use();
-
-    glm::mat4 projection = pCamera_->GetProjMatrix((float)_windowWidth, (float)_windowHeight);
-	glm::mat4 view = pCamera_->GetViewMatrix();
+	view = pCamera_->GetViewMatrix();
     
     if (!bVisualizeTex)
         pDiffuseTexture->Bind();
@@ -199,10 +215,9 @@ int OG::Scene_Assignment2::Render(double dt)
         shaders_[current_shader]->SetUniform3fv("I_emissive", obj->color_);
         if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
         {
-            OBJECT->models_[obj->getName()]->Draw(shaders_[current_shader].get());
-
-			OBJECT->models_[obj->getName()]->drawNormal = is_normal_vector_on;
-            OBJECT->models_[obj->getName()]->drawFaceNormal = drawFaceNormal;
+            obj->drawNormal = is_normal_vector_on;
+            obj->drawFaceNormal = drawFaceNormal;
+            obj->draw(shaders_[current_shader].get());
         }
     }
 
@@ -212,17 +227,6 @@ int OG::Scene_Assignment2::Render(double dt)
     }
 
 	pOrbit->DrawOrbit();
-
-    glm::vec3 scale = plane_->getScale();
-    glm::vec3 transform = plane_->getPosition();
-    glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(-90.0f), plane_->rotation_axis_) * glm::scale(scale);
-    glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
-
-    shaders_[current_shader]->SetUniformMatrix4fv("model", model);
-    shaders_[current_shader]->SetUniformMatrix4fv("normalMatrix", normalMatrix);
-    shaders_[current_shader]->SetUniform3fv("I_emissive", plane_->color_);
-
-    OBJECT->models_[plane_->getName()]->Draw(shaders_[current_shader].get());
 
     return 0;
 }
@@ -437,6 +441,47 @@ void OG::Scene_Assignment2::CleanupImGui()
 	ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+}
+
+/// <summary>
+/// Frame Buffer, Add 6 attachments for CUBE MAP
+/// </summary>
+
+void OG::Scene_Assignment2::setFramebuffer()
+{
+    pFBO->bind();
+
+    pCamera_->Zoom = 90.0f;
+
+    std::unique_ptr<Texture> front = std::make_unique<Texture>(_windowWidth, _windowHeight, 0);
+    std::unique_ptr<Texture> back = std::make_unique<Texture>(_windowWidth, _windowHeight, 1);
+    std::unique_ptr<Texture> left = std::make_unique<Texture>(_windowWidth, _windowHeight, 2);
+    std::unique_ptr<Texture> right = std::make_unique<Texture>(_windowWidth, _windowHeight, 3);
+    std::unique_ptr<Texture> up = std::make_unique<Texture>(_windowWidth, _windowHeight, 4);
+    std::unique_ptr<Texture> down = std::make_unique<Texture>(_windowWidth, _windowHeight, 5);
+
+    pFBO->setTextureAttachment(0, front.release());
+    pFBO->setTextureAttachment(1, back.release());
+    pFBO->setTextureAttachment(2, left .release());
+    pFBO->setTextureAttachment(3, right.release());
+    pFBO->setTextureAttachment(4, up.release());
+    pFBO->setTextureAttachment(5, down.release());
+
+    pFBO->setDepthBuffer();
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        std::cout << "Frame Buffer Not Ready" << std::endl;
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+}
+
+void OG::Scene_Assignment2::updateFramebuffer()
+{
+    pCamera_->Position = glm::vec3(0.0f);
+    pCamera_->Zoom = 90.0f;
+    
+
 }
 
 //////////////////////////////////////////////////////

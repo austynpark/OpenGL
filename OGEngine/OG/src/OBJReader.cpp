@@ -45,7 +45,7 @@ namespace OG
     /////////////////////////////////////////////
     /////////////////////////////////////////////
     /////////////////////////////////////////////
-    double OBJReader::ReadOBJFile(const std::string& filepath, std::vector<std::unique_ptr<Mesh>>& pMeshes,
+    double OBJReader::ReadOBJFile(const std::string& filepath, std::unique_ptr<Mesh>& pMesh,
         GLboolean bFlipNormals)
     {
         int rFlag = -1;
@@ -56,7 +56,7 @@ namespace OG
         glm::vec3 minVec3(FLT_MAX, FLT_MAX, FLT_MAX);
         glm::vec3 maxVec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-        Mesh* pMesh = new Mesh();
+        pMesh = std::make_unique<Mesh>();
 
         std::cout << "Loading : " << filepath << " - ";
 
@@ -192,8 +192,6 @@ namespace OG
 
         pMesh->MapVertexBuffer();
   
-        pMeshes.emplace_back(std::move(pMesh));
-
         return timeDuration;
     }
 }

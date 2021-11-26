@@ -4,13 +4,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-OG::Texture::Texture(const std::string& fileName, GLuint texNum)
+OG::Texture::Texture(const char* fileName, GLuint texNum)
 {
-	/*
-	glCreateTextures(target, n, &id)
-	glT
-	*/
-
 	glGenTextures(1, &id_);
 	glBindTexture(GL_TEXTURE_2D, id_);
 
@@ -19,7 +14,10 @@ OG::Texture::Texture(const std::string& fileName, GLuint texNum)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	std::string path = "OG/images/" + fileName;
+	const char* prefix = "OG/images/";
+
+	std::string path = prefix + std::string(fileName);
+
 
 	unsigned char* buffer = stbi_load(path.c_str(), &m_width, &m_height, &m_nrChannels, 0);
 	if (buffer)
@@ -45,6 +43,23 @@ OG::Texture::Texture(const std::string& fileName, GLuint texNum)
 	texNum_ = texNum;
 }
 
+OG::Texture::Texture(int width, int height, GLuint texNum)
+{
+	m_nrChannels = 3;
+	texNum_ = texNum;
+
+	m_width = width;
+	m_height = height;
+
+	glGenTextures(1, &id_);
+	glBindTexture(GL_TEXTURE_2D, id_);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+}
+
 OG::Texture::~Texture()
 {
 	glDeleteTextures(1, &id_);
@@ -59,6 +74,11 @@ void OG::Texture::Bind() const
 void OG::Texture::UnBind() const
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint OG::Texture::getHandler() const
+{
+	return id_;
 }
 
 void OG::Texture::flip_vertically()

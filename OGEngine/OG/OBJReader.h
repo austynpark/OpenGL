@@ -33,7 +33,7 @@ namespace OG
         virtual ~OBJReader();
 
         double ReadOBJFile(const std::string& filepath,
-            std::vector<std::unique_ptr<Mesh>>& pMeshes,
+            std::unique_ptr<Mesh>& pMesh,
             GLboolean bFlipNormals = false);
 
     private:

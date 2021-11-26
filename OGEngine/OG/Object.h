@@ -24,6 +24,8 @@ End Header --------------------------------------------------------*/
 
 namespace OG
 {
+    class Shader;
+
     class Object
     {
     public:
@@ -52,11 +54,16 @@ namespace OG
         void setScale(const glm::vec3& s);
         void setColor(const glm::vec3& col);
         void setName(const char* name);
+        void draw(Shader* shader);
 
 		static std::unordered_map<std::string, std::unique_ptr<Model>> models_;
+
+		// Determine if normal should be drawn
+		bool drawNormal = false;
+		// If true, draw Face Normal or draw Vertex Normal
+		bool drawFaceNormal = true;
+
     private:
-
-
 
     };
     extern Object* OBJECT;

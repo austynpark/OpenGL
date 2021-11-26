@@ -121,6 +121,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="OG\src\CubeMap.cpp" />
+    <ClCompile Include="OG\src\FBO.cpp" />
     <ClCompile Include="OG\scenes\Scene_Assignment2.cpp" />
     <ClCompile Include="OG\src\Camera.cpp" />
     <ClCompile Include="OG\src\ArrayBufferObject.cpp" />
@@ -158,6 +160,8 @@
     <ClInclude Include="..\ThirdParty\include\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\ThirdParty\include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\ThirdParty\include\imgui\imstb_truetype.h" />
+    <ClInclude Include="OG\CubeMap.h" />
+    <ClInclude Include="OG\FBO.h" />
     <ClInclude Include="OG\Camera.h" />
     <ClInclude Include="OG\ArrayBufferObject.h" />
     <ClInclude Include="OG\GLApplication.h" />
@@ -179,13 +183,13 @@
     <ClInclude Include="OG\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="OG\shaders\BlinnPhong.frag" />
     <None Include="OG\shaders\PhongLighting.frag" />
     <None Include="OG\shaders\PhongLighting.vert" />
     <None Include="OG\shaders\PhongShading.frag" />
     <None Include="OG\shaders\PhongShading.vert" />
-    <None Include="OG\shaders\QuadFragmentShader.frag" />
-    <None Include="OG\shaders\QuadVertexShader.vert" />
-    <None Include="OG\shaders\BlinnPhong.frag" />
+    <None Include="OG\shaders\CubeMap.frag" />
+    <None Include="OG\shaders\CubeMap.vert" />
     <None Include="OG\shaders\PKO.frag" />
     <None Include="OG\shaders\BlinnPhong.vert" />
     <None Include="OG\shaders\PKO.vert" />
