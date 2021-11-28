@@ -157,6 +157,7 @@ namespace OG
 		std::unique_ptr<FBO> pFBO;
 		void setFramebuffer();
 		void updateFramebuffer();
+
 	};
 }
 

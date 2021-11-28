@@ -44,6 +44,15 @@ uniform float zMax;
 uniform bool isNormMapping;
 uniform vec3 I_emissive;
 
+uniform sampler2D right;
+uniform sampler2D left;
+uniform sampler2D top;
+uniform sampler2D bottom;
+uniform sampler2D front; 
+uniform sampler2D back;
+
+int face_num = 0;
+
 vec3 CalcDirLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords) 
 {
     // Object to Light
@@ -167,11 +176,13 @@ vec2 CalcCubeMap(vec3 vEntity)
 
             if (x > 0)
             {
-                uv.x = -z / absX;
+                uv.x = z / absX;
+                face_num = 0;
             }
             else
             {
-                uv.x = z / absX;
+                uv.x = -z / absX;
+                face_num = 1;
             }
         }
         // POSITIVE & NEGATIVE Y
@@ -180,9 +191,15 @@ vec2 CalcCubeMap(vec3 vEntity)
             uv.x = x / absY;
 
             if (y > 0)
-                uv.y = -z / absY;
-            else
+            {
                 uv.y = z / absY;
+				face_num = 2;
+            }
+            else
+            {
+                uv.y = -z / absY;
+                face_num = 3;
+            }
         }
         // POSITIVE & NEGATIVE Z
         else if (absZ >= absX && absZ >= absY)
@@ -190,9 +207,15 @@ vec2 CalcCubeMap(vec3 vEntity)
 			uv.y = y / absZ;
 
             if (z > 0)
-                uv.x = x / absZ;
-            else
+            {
                 uv.x = -x / absZ;
+                face_num = 4;
+            }
+            else
+            {
+                uv.x = x / absZ;
+                face_num = 5;
+            }
         }
 
         // Convert range from -1 to 1 to 0 to 1
@@ -271,5 +294,32 @@ void main() {
     result = mix(fog_color, result, fogFactor);
     result = clamp(result, 0, 1);
 
+
+
     fragColor = vec4(result, 1.0);
+
+    switch(face_num) {
+        case 0:
+            fragColor = mix(texture(right, texCoords), vec4(result, 1.0), 0.0f);
+			break;
+        case 1:
+            fragColor = mix(texture(left, texCoords), vec4(result, 1.0), 0.0f);
+            break;
+		case 2:
+            fragColor = mix(texture(top, texCoords), vec4(result, 1.0), 0.0f);
+            break;
+        case 3:
+            fragColor = mix(texture(bottom, texCoords), vec4(result, 1.0), 0.0f);
+            break;
+        case 4:
+            fragColor = mix(texture(front, texCoords), vec4(result, 1.0), 0.0f);
+            break;
+        case 5:
+            fragColor = mix(texture(back, texCoords), vec4(result, 1.0), 0.0f);
+            break;
+        default:
+            fragColor = vec4(result, 1.0);
+
+    }
+
 }

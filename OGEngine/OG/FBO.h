@@ -3,9 +3,9 @@
 
 #include <glad/glad.h>
 
-#include <Texture.h>
-
 namespace OG {
+	class Texture;
+
 	class FBO {
 
 	public:
@@ -14,8 +14,9 @@ namespace OG {
 
 		void bind() const;
 		void unbind() const;
-		void setTextureAttachment(GLuint numSlot, Texture* texture, GLint level = 0);
+		void setTextureAttachment(const char* texture_name, std::unique_ptr<Texture>& texture, GLint level = 0);
 		void setDepthBuffer();
+		Texture* getAttachment(const char* texture_name);
 
 	private:
 		int m_width;
@@ -25,8 +26,8 @@ namespace OG {
 
 		GLuint m_depthID;
 
-		// Attachment slot, texture Handler
-		std::unordered_map<GLenum, Texture*> m_attachments;
+		// Attachment (Texture) Name, texture Handler
+		std::unordered_map<std::string, std::unique_ptr<Texture>> m_attachments;
 	};
 }
 

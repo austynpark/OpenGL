@@ -21,64 +21,59 @@ vec4 CalcCubeMap(vec3 vEntity)
         float absY = abs(y);
         float absZ = abs(z);
 
-        vec2 uv = vec2(1.0);
+        vec2 uv = vec2(0.0);
 
         // POSITIVE & NEGATIVE X
         if ((absX >= absY) && (absX >= absZ))
         {
-			uv.y += y / absX;
+			uv.y = y / absX;
 
             if (x > 0)
             {
-                uv.x += z / absX;
-                return texture(right, uv / 2.0f);
-                // Right
+                uv.x = -z / absX;
+                return texture(right, (uv + vec2(1.0)) * 0.5f);
             }
             else
             {
-                uv.x += z / absX;
-                return texture(left, uv / 2.0f);
-                // Left
+                uv.x = z / absX;
+                return texture(left, (uv + vec2(1.0)) * 0.5f);
             }
         }
         // POSITIVE & NEGATIVE Y
         else if ((absY >= absX) && (absY >= absZ))
         {
-            uv.x += x / absY;
+            uv.x = x / absY;
 
             if (y > 0)
             {
-                uv.y += z / absY;
-                return texture(top, uv / 2.0f);
-                // Top
+                uv.y = -z / absY;
+                return texture(top, (uv + vec2(1.0)) * 0.5f);
             }
             else
             {
-                uv.y += z / absY;
-                return texture(bottom, uv / 2.0f);
-                // Bottom
+                uv.y = z / absY;
+                return texture(bottom, (uv + vec2(1.0)) * 0.5f);
             }
         }
         // POSITIVE & NEGATIVE Z
         else if (absZ >= absX && absZ >= absY)
         {
-			uv.y += y / absZ;
+			uv.y = y / absZ;
 
             if (z > 0)
             {
-                uv.x += x / absZ;
-                return texture(front, uv / 2.0f);
-                // Foward
+                uv.x = x / absZ;
+                return texture(front, (uv + vec2(1.0)) * 0.5f);
             }
             else
             {
-                uv.x += x / absZ;
-                return texture(back, uv / 2.0f);
-                // Back
+                uv.x = -x / absZ;
+                return texture(back, (uv + vec2(1.0)) * 0.5f);
             }
         }
 
-        return vec4(1.0f);
+        // Convert range from -1 to 1 to 0 to 1
+		return vec4(0.0f);
 }
 
 void main()

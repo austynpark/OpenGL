@@ -49,11 +49,9 @@ OG::Scene_Assignment2::~Scene_Assignment2()
 
 int OG::Scene_Assignment2::Init()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     shaders_["PhongShading"] = std::make_unique<Shader>("PhongShading.vert", "PhongShading.frag");
-    shaders_["PhongLighting"] = std::make_unique<Shader>("PhongLighting.vert", "PhongLighting.frag");
-    shaders_["BlinnPhong"] = std::make_unique<Shader>("BlinnPhong.vert", "BlinnPhong.frag");
+    //shaders_["PhongLighting"] = std::make_unique<Shader>("PhongLighting.vert", "PhongLighting.frag");
+    //shaders_["BlinnPhong"] = std::make_unique<Shader>("BlinnPhong.vert", "BlinnPhong.frag");
     
     current_shader = "PhongShading";
     
@@ -74,6 +72,7 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
     OBJECT->models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
     OBJECT->models_["sphere_mesh"] = std::make_unique<Model>(Mesh::CreateSphere(0.1f, 36, 18));
+    /*
     OBJECT->models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
     OBJECT->models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
     OBJECT->models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
@@ -83,7 +82,7 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
     OBJECT->models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
     OBJECT->models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
-
+    */
     for (int i = 0; i < 16; ++i)
     {
         spheres_.emplace_back(std::move(
@@ -96,6 +95,8 @@ int OG::Scene_Assignment2::Init()
     };
 
     skybox->Init(faces, 2);
+
+    setFramebuffer();
 
     return 0;
 }
@@ -111,8 +112,8 @@ int OG::Scene_Assignment2::preRender(double dt)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_STENCIL_TEST);
+    //glEnable(GL_DEBUG_OUTPUT);
+    //glEnable(GL_STENCIL_TEST);
 
     glCullFace(GL_BACK);
 
@@ -127,19 +128,15 @@ int OG::Scene_Assignment2::preRender(double dt)
 
 int OG::Scene_Assignment2::Render(double dt)
 {
-    // By converting view matrix 4x4 to 3x3, remove translation section
-    glm::mat4 view = glm::mat4(glm::mat3(pCamera_->GetViewMatrix()));
+
+    glm::mat4 view = pCamera_->GetViewMatrix();
     glm::mat4 projection = pCamera_->GetProjMatrix((float)_windowWidth, (float)_windowHeight);
 
-    glDepthMask(GL_FALSE);
-    skybox->Render(view, projection);
-    glDepthMask(GL_TRUE);
+    shaders_[current_shader]->Use();
 
-	shaders_[current_shader]->Use();
+    lightShader->SetUniformBlock("Transforms", 0U);
 
-	lightShader->SetUniformBlock("Transforms", 0U);
-
-	shaders_[current_shader]->SetUniformBlock("Transforms", 0U);
+    shaders_[current_shader]->SetUniformBlock("Transforms", 0U);
     shaders_[current_shader]->SetUniformBlock("LightInfo", 1U);
 
     shaders_[current_shader]->SetUniform1i("diffuse_texture", pDiffuseTexture->texNum_);
@@ -154,19 +151,27 @@ int OG::Scene_Assignment2::Render(double dt)
         shaders_[current_shader]->SetUniform1i("uvType", (GLint)(OBJECT->models_[current_item]->uvType + 1));
     }
 
-	view = pCamera_->GetViewMatrix();
-    
     if (!bVisualizeTex)
         pDiffuseTexture->Bind();
     else
         pVisualizeTexture->Bind();
     pSpecularTexture->Bind();
 
-    pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
+    // By converting view matrix 4x4 to 3x3, remove translation section
+    glm::mat4 view_without_translation = glm::mat4(glm::mat3(pCamera_->GetViewMatrix()));
+
+    //glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
+    skybox->Render(view_without_translation, projection);
+    //glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+
+    updateFramebuffer();
+
+	pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
     pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
 
-
-	lightShader->Use();
+    lightShader->Use();
 
     GLsizei offset = 0;
     for (int i = 0; i < num_of_lights; ++i)
@@ -183,13 +188,13 @@ int OG::Scene_Assignment2::Render(double dt)
         light[i].position = glm::vec4(spheres_[i]->position_, 0.0f);
         light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
 
-        
+
         OBJECT->models_[spheres_[i]->getName()]->Draw(shaders_[current_shader].get());
- /************************************* ADD LIGHT UNIFORM BUFFER DATA ****************************************************************************/
+        /************************************* ADD LIGHT UNIFORM BUFFER DATA ****************************************************************************/
         pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
         offset += static_cast<GLsizei>(sizeof(glm::vec4) * 6);
     }
-   
+
     pUBO_light->AddSubData(sizeof(Light) * 16, sizeof(glm::vec3), glm::value_ptr(att)); //96 * 4, 16
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4), sizeof(glm::vec3), glm::value_ptr(pCamera_->Position)); // 96 * 4 + 16, 16
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2, sizeof(glm::vec3), glm::value_ptr(global_ambient)); // 96 + 32, 16
@@ -197,15 +202,37 @@ int OG::Scene_Assignment2::Render(double dt)
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3), sizeof(GLfloat), &near);
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat), sizeof(GLfloat), &far);
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
-/*************************************************************************************************************************************************/
+    /*************************************************************************************************************************************************/
+
+	if (pOrbit->radius != pOrbit->prev_radius) {
+        pOrbit->prev_radius = pOrbit->radius;
+        pOrbit->SetupBuffer();
+    }
+
+    lightShader->SetUniformMatrix4fv("model", glm::mat4(1.0f));
+    pOrbit->DrawOrbit();
+
     shaders_[current_shader]->Use();
+
+    pFBO->getAttachment("right")->Bind();
+    shaders_[current_shader]->SetUniform1i("right", pFBO->getAttachment("right")->texNum_);
+    pFBO->getAttachment("left")->Bind();
+    shaders_[current_shader]->SetUniform1i("left", pFBO->getAttachment("left")->texNum_);
+    pFBO->getAttachment("top")->Bind();
+    shaders_[current_shader]->SetUniform1i("top", pFBO->getAttachment("top")->texNum_);
+    pFBO->getAttachment("bottom")->Bind();
+    shaders_[current_shader]->SetUniform1i("bottom", pFBO->getAttachment("bottom")->texNum_);
+    pFBO->getAttachment("front")->Bind();
+    shaders_[current_shader]->SetUniform1i("front", pFBO->getAttachment("front")->texNum_);
+    pFBO->getAttachment("back")->Bind();
+    shaders_[current_shader]->SetUniform1i("back", pFBO->getAttachment("back")->texNum_);
 
     for (const auto& obj : objects_)
     {
         obj->setName(current_item);
 
         glm::vec3 scale = obj->getScale();
-        glm::vec3 transform = obj->getPosition();   
+        glm::vec3 transform = obj->getPosition();
         glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(obj->rotation_angle_), obj->rotation_axis_) * glm::scale(scale);
 
         glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
@@ -220,13 +247,6 @@ int OG::Scene_Assignment2::Render(double dt)
             obj->draw(shaders_[current_shader].get());
         }
     }
-
-    if (pOrbit->radius != pOrbit->prev_radius) {
-        pOrbit->prev_radius = pOrbit->radius;
-		pOrbit->SetupBuffer();
-    }
-
-	pOrbit->DrawOrbit();
 
     return 0;
 }
@@ -446,42 +466,84 @@ void OG::Scene_Assignment2::CleanupImGui()
 /// <summary>
 /// Frame Buffer, Add 6 attachments for CUBE MAP
 /// </summary>
-
 void OG::Scene_Assignment2::setFramebuffer()
 {
     pFBO->bind();
 
-    pCamera_->Zoom = 90.0f;
+    //pCamera_->Zoom = 90.0f;
+    std::unique_ptr<Texture> right = std::make_unique<Texture>(_windowWidth, _windowHeight, 2);
+    std::unique_ptr<Texture> left = std::make_unique<Texture>(_windowWidth, _windowHeight, 3);
+    std::unique_ptr<Texture> top = std::make_unique<Texture>(_windowWidth, _windowHeight, 4);
+    std::unique_ptr<Texture> bottom = std::make_unique<Texture>(_windowWidth, _windowHeight, 5);
+    std::unique_ptr<Texture> front = std::make_unique<Texture>(_windowWidth, _windowHeight, 6);
+    std::unique_ptr<Texture> back = std::make_unique<Texture>(_windowWidth, _windowHeight, 7);
 
-    std::unique_ptr<Texture> front = std::make_unique<Texture>(_windowWidth, _windowHeight, 0);
-    std::unique_ptr<Texture> back = std::make_unique<Texture>(_windowWidth, _windowHeight, 1);
-    std::unique_ptr<Texture> left = std::make_unique<Texture>(_windowWidth, _windowHeight, 2);
-    std::unique_ptr<Texture> right = std::make_unique<Texture>(_windowWidth, _windowHeight, 3);
-    std::unique_ptr<Texture> up = std::make_unique<Texture>(_windowWidth, _windowHeight, 4);
-    std::unique_ptr<Texture> down = std::make_unique<Texture>(_windowWidth, _windowHeight, 5);
-
-    pFBO->setTextureAttachment(0, front.release());
-    pFBO->setTextureAttachment(1, back.release());
-    pFBO->setTextureAttachment(2, left .release());
-    pFBO->setTextureAttachment(3, right.release());
-    pFBO->setTextureAttachment(4, up.release());
-    pFBO->setTextureAttachment(5, down.release());
+    pFBO->setTextureAttachment("right", right);
+    pFBO->setTextureAttachment("left", left);
+    pFBO->setTextureAttachment("top", top);
+    pFBO->setTextureAttachment("bottom", bottom);
+    pFBO->setTextureAttachment("front", front);
+    pFBO->setTextureAttachment("back", back);
 
     pFBO->setDepthBuffer();
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         std::cout << "Frame Buffer Not Ready" << std::endl;
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+
+    pFBO->unbind();
 }
 
 void OG::Scene_Assignment2::updateFramebuffer()
 {
-    pCamera_->Position = glm::vec3(0.0f);
-    pCamera_->Zoom = 90.0f;
-    
+    pFBO->bind();
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)_windowWidth / (float)_windowHeight, 0.1f, 100.0f);    pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
+
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4), sizeof(glm::vec3), glm::value_ptr(pCamera_->Position)); // 96 * 4 + 16, 16
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2, sizeof(glm::vec3), glm::value_ptr(global_ambient)); // 96 + 32, 16
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3, sizeof(glm::vec3), glm::value_ptr(fog_color)); // 96 + 48, 16
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3), sizeof(GLfloat), &near);
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat), sizeof(GLfloat), &far);
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
+    pUBO_light->AddSubData(sizeof(Light) * 16, sizeof(glm::vec3), glm::value_ptr(att)); //96 * 4, 16
+
+    for (int i = 0; i < 6; ++i) {
+        glm::mat4 view = skybox->camera_lookat[i];
+        pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
+        glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
+
+        glDepthMask(GL_FALSE);
+        skybox->Render(view, projection);
+        glDepthMask(GL_TRUE);
+
+        lightShader->Use();
+
+        GLsizei offset = 0;
+        for (int i = 0; i < num_of_lights; ++i) {
+            glm::mat4 model = glm::mat4(1.0f);
+            glm::vec3 scale = spheres_[i]->getScale();
+            glm::vec3 transform = spheres_[i]->getPosition();
+
+            model = glm::translate(transform) * glm::scale(scale);
+
+            lightShader->SetUniformMatrix4fv("model", model);
+            lightShader->SetUniform4fv("diffuse", light[i].diffuse);
+
+            light[i].position = glm::vec4(spheres_[i]->position_, 0.0f);
+            light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
+
+            OBJECT->models_[spheres_[i]->getName()]->Draw(shaders_[current_shader].get());
+            pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
+            offset += static_cast<GLsizei>(sizeof(glm::vec4) * 6);
+        }
+    }
+
+    pFBO->unbind();
 }
 
 //////////////////////////////////////////////////////
