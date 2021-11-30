@@ -51,7 +51,12 @@ uniform sampler2D bottom;
 uniform sampler2D front; 
 uniform sampler2D back;
 
-int face_num = 0;
+uniform float mixRatio; // ratio for texture & reflection, refraction (0.0 ~ 1.0)
+uniform float refractIndex; // 1.0 ~ 100.0
+uniform float fresnelPower; // 0.0 ~ 10.0
+uniform float chromatic_aberration;
+uniform bool b_calcRefract;
+uniform bool b_calcReflect;
 
 vec3 CalcDirLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords) 
 {
@@ -60,8 +65,14 @@ vec3 CalcDirLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords)
 
     float diff = max(dot(norm, lightDir), 0.0);
 
-    vec4 Ks = texture(specular_texture, texCoords);
-    vec3 Kd = vec3(texture(diffuse_texture, texCoords));
+    vec4 Ks = vec4(1.0f);
+    vec3 Kd = vec3(1.0f);
+
+    if(uvType != 4)
+    {
+        Ks = texture(specular_texture, texCoords);
+        Kd = vec3(texture(diffuse_texture, texCoords));
+    }
 
     float specular = 0;
 
@@ -86,8 +97,14 @@ vec3 CalcPointLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords)
 
     float diff = max(dot(norm, lightDir), 0.0);
 
-    vec4 Ks = texture(specular_texture, texCoords);
-    vec3 Kd = vec3(texture(diffuse_texture, texCoords));
+    vec4 Ks = vec4(1.0f);
+    vec3 Kd = vec3(1.0f);
+
+    if(uvType != 4)
+    {
+        Ks = texture(specular_texture, texCoords);
+        Kd = vec3(texture(diffuse_texture, texCoords));
+    }
 
     float specular = 0.0f;
 
@@ -120,8 +137,14 @@ vec3 CalcSpotLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords)
     // diffuse shading
     float diff = max(dot(norm, lightDir), 0.0);
     
-    vec4 Ks = texture(specular_texture, texCoords);
-    vec3 Kd = vec3(texture(diffuse_texture, texCoords));
+    vec4 Ks = vec4(1.0f);
+    vec3 Kd = vec3(1.0f);
+
+    if(uvType != 4)
+    {
+        Ks = texture(specular_texture, texCoords);
+        Kd = vec3(texture(diffuse_texture, texCoords));
+    }
 
     float specular = 0.0f;
     // specular shading
@@ -172,17 +195,15 @@ vec2 CalcCubeMap(vec3 vEntity)
         // POSITIVE & NEGATIVE X
         if ((absX >= absY) && (absX >= absZ))
         {
-			uv.y = y / absX;
+			uv.y = -y / absX;
 
             if (x > 0)
             {
-                uv.x = z / absX;
-                face_num = 0;
+                uv.x = -z / absX;
             }
             else
             {
-                uv.x = -z / absX;
-                face_num = 1;
+                uv.x = z / absX;
             }
         }
         // POSITIVE & NEGATIVE Y
@@ -193,28 +214,24 @@ vec2 CalcCubeMap(vec3 vEntity)
             if (y > 0)
             {
                 uv.y = z / absY;
-				face_num = 2;
             }
             else
             {
                 uv.y = -z / absY;
-                face_num = 3;
             }
         }
         // POSITIVE & NEGATIVE Z
         else if (absZ >= absX && absZ >= absY)
         {
-			uv.y = y / absZ;
+			uv.y = -y / absZ;
 
             if (z > 0)
             {
-                uv.x = -x / absZ;
-                face_num = 4;
+                uv.x = x / absZ;
             }
             else
             {
-                uv.x = x / absZ;
-                face_num = 5;
+                uv.x = -x / absZ;
             }
         }
 
@@ -222,21 +239,94 @@ vec2 CalcCubeMap(vec3 vEntity)
         return (uv + vec2(1.0)) * 0.5f;
 }
 
+vec3 CalcReflectMap(vec3 vEntity)
+{
+        float x = vEntity.x;
+        float y = vEntity.y;
+        float z = vEntity.z;
+
+        float absX = abs(x);
+        float absY = abs(y);
+        float absZ = abs(z);
+
+        vec2 uv = vec2(0.0);
+
+        // POSITIVE & NEGATIVE X
+        if ((absX >= absY) && (absX >= absZ))
+        {
+			uv.y = -y / absX;
+
+            if (x > 0)
+            {
+                uv.x = -z / absX;
+                return texture(right, (uv + vec2(1.0)) * 0.5f).rgb;
+            }
+            else
+            {
+                uv.x = z / absX;
+                return texture(left, (uv + vec2(1.0)) * 0.5f).rgb;
+            }
+        }
+        // POSITIVE & NEGATIVE Y
+        else if ((absY >= absX) && (absY >= absZ))
+        {
+            uv.x = x / absY;
+
+            if (y > 0)
+            {
+                uv.y = z / absY;
+                return texture(top, (uv + vec2(1.0)) * 0.5f).rgb;
+            }
+            else
+            {
+                uv.y = -z / absY;
+                return texture(bottom, (uv + vec2(1.0)) * 0.5f).rgb;
+            }
+        }
+        // POSITIVE & NEGATIVE Z
+        else if (absZ >= absX && absZ >= absY)
+        {
+			uv.y = -y / absZ;
+
+            if (z > 0)
+            {
+                uv.x = x / absZ;
+                return texture(front, (uv + vec2(1.0)) * 0.5f).rgb;
+            }
+            else
+            {
+                uv.x = -x / absZ;
+                return texture(back, (uv + vec2(1.0)) * 0.5f).rgb;
+            }
+        }
+
+        // Convert range from -1 to 1 to 0 to 1
+		return vec3(0.0f);
+}
+
+vec3 CalcRefract(vec3 I, vec3 N, float eta) {
+    float k = 1.0 - eta * eta * (1.0 - dot(N, I) * dot(N, I));
+    if(k < 0.0)
+        return vec3(0.0);
+    else
+        return eta * I - (eta * dot(N, I) + sqrt(k)) * N;
+}
+
+
 void main() {
 
 	vec3 norm = normalize(fs_in.fragNormal);
 
-    vec2 texCoords;
-    
     float theta = 0.0f;
     float phi = 0.0f;
 
-    vec3 V;
+	vec3 V = fs_in.Pos;
+    
     if(isNormMapping)
         V = fs_in.Norm;
-    else
-        V = fs_in.Pos;
 
+    vec2 texCoords = CalcCubeMap(V);
+     
     switch (uvType) {
         case 0:
             texCoords = fs_in.TexCoords;
@@ -269,6 +359,7 @@ void main() {
             texCoords = fs_in.TexCoords;
     }
 
+
     vec3 viewDir = normalize(camera - fs_in.fragPos);
 
     vec3 result = vec3(0.0, 0.0, 0.0);
@@ -294,32 +385,45 @@ void main() {
     result = mix(fog_color, result, fogFactor);
     result = clamp(result, 0, 1);
 
+    // TODO: Move camera pos out of light uniform block and calc these on vert shader
+    // TODO: pass viewDir, reflect, refract vector as an vs_out
 
+	vec3 reflectColor = vec3(0.0f);
 
-    fragColor = vec4(result, 1.0);
+    if(b_calcReflect)    
+		reflectColor = CalcReflectMap(2 * dot(norm, viewDir) * norm - viewDir);
 
-    switch(face_num) {
-        case 0:
-            fragColor = mix(texture(right, texCoords), vec4(result, 1.0), 0.0f);
-			break;
-        case 1:
-            fragColor = mix(texture(left, texCoords), vec4(result, 1.0), 0.0f);
-            break;
-		case 2:
-            fragColor = mix(texture(top, texCoords), vec4(result, 1.0), 0.0f);
-            break;
-        case 3:
-            fragColor = mix(texture(bottom, texCoords), vec4(result, 1.0), 0.0f);
-            break;
-        case 4:
-            fragColor = mix(texture(front, texCoords), vec4(result, 1.0), 0.0f);
-            break;
-        case 5:
-            fragColor = mix(texture(back, texCoords), vec4(result, 1.0), 0.0f);
-            break;
-        default:
-            fragColor = vec4(result, 1.0);
+    vec3 refractColor = vec3(0.0f);
 
+    float eta = 1.0f / refractIndex;
+
+    ;
+
+    float R = eta - (chromatic_aberration * 0.5f);
+    float G = eta + (chromatic_aberration * 0.5f);
+    float B = eta + (chromatic_aberration * 1.5f);
+
+	float F = ((1.0 - G) * (1.0 - G)) / ((1.0 + G) * (1.0 + G));
+
+    float Ratio = F + (1.0 - F) * pow((1.0 - dot(norm, viewDir)), fresnelPower);
+
+    vec3 RefractR = CalcRefract(-viewDir, norm, R);
+	refractColor.r = CalcReflectMap(RefractR).r;
+    vec3 RefractG = CalcRefract(-viewDir, norm, G);
+	refractColor.g = CalcReflectMap(RefractG).g;
+    vec3 RefractB = CalcRefract(-viewDir, norm, B);
+	refractColor.b = CalcReflectMap(RefractB).b;
+
+    // Reflect Only
+	vec3 color = reflectColor;
+
+    if(b_calcRefract && b_calcReflect) {
+        color = mix(refractColor, reflectColor, Ratio).rgb; // Fresnel
+    } else if(b_calcRefract) {
+        color = refractColor; // Refract Only
     }
 
+    result = mix(result, color, mixRatio);
+
+    fragColor = vec4(result, 1.0);
 }

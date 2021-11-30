@@ -27,12 +27,12 @@ End Header --------------------------------------------------------*/
 
 OG::Scene_Assignment2::Scene_Assignment2(int windowWidth, int windowHeight) : Scene(windowWidth, windowHeight),
 shaders_(), lightShader(std::make_unique<Shader>("light_object.vert", "light_object.frag")),
-pCamera_(std::make_unique<Camera>(glm::vec3(0.0f, 3.0f, 10.0f))),
+pCamera_(std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 10.0f))),
 pDiffuseTexture(std::make_unique<Texture>("metal_roof_diff_512x512.png", 0)), 
 pSpecularTexture(std::make_unique<Texture>("metal_roof_spec_512x512.png", 1)),
 pVisualizeTexture(std::make_unique<Texture>("visualize.png", 0)),
-pOrbit(std::make_unique<Orbit>(2.5f, 100)),
-pFBO(std::make_unique<FBO>(windowWidth, windowHeight)),
+pOrbit(std::make_unique<Orbit>(2.5f, 300)),
+pFBO(std::make_unique<FBO>()),
 skybox(std::make_unique<CubeMap>())
 {
     num_of_lights = 1;
@@ -40,7 +40,25 @@ skybox(std::make_unique<CubeMap>())
     bVisualizeTex = false;
     is_normal_vector_on = false;
     drawFaceNormal = false;
-    bCalcOnCPU = true;
+    bCalcOnCPU = false;
+
+    refraction[0] = 1.0003f; // Air
+    refraction[1] = 1.000132f; // Hydrogen
+    refraction[2] = 1.33f; // Water
+    refraction[3] = 1.47f; // Olive Oil
+    refraction[4] = 1.31f; // Ice
+    refraction[5] = 1.46f; // Quartz
+    refraction[6] = 2.42f; // Diamond
+    refraction[7] = 1.49f; // Acrylic
+
+    refract_index = refraction[0];
+    chromatic_aberration = 0.01f;
+    index_of_refract_items = 0;
+
+    b_calcReflect = true;
+    b_calcRefract = true;
+    mixRatio = 1.0f;
+    fresnelPower = 2.0f;
 }
 
 OG::Scene_Assignment2::~Scene_Assignment2()
@@ -61,10 +79,10 @@ int OG::Scene_Assignment2::Init()
     SetupBuffers();
     pOrbit->SetupBuffer();
 
-    current_item = "cube2";
+    current_item = "simpleSphere";
 
     objects_.emplace_back(std::move(
-        OBJECT->CreateObject("cube2",glm::vec3(0.0f), glm::vec3(1.0f))
+        OBJECT->CreateObject(current_item, glm::vec3(0.0f), glm::vec3(1.0f))
     ));
     
     OBJECT->models_["cube"] = std::make_unique<Model>("OG/models/cube.obj");
@@ -142,15 +160,6 @@ int OG::Scene_Assignment2::Render(double dt)
     shaders_[current_shader]->SetUniform1i("diffuse_texture", pDiffuseTexture->texNum_);
     shaders_[current_shader]->SetUniform1i("specular_texture", pSpecularTexture->texNum_);
 
-    if (bCalcOnCPU)
-    {
-        shaders_[current_shader]->SetUniform1i("uvType", 0);
-    }
-    else
-    {
-        shaders_[current_shader]->SetUniform1i("uvType", (GLint)(OBJECT->models_[current_item]->uvType + 1));
-    }
-
     if (!bVisualizeTex)
         pDiffuseTexture->Bind();
     else
@@ -159,7 +168,7 @@ int OG::Scene_Assignment2::Render(double dt)
 
     // By converting view matrix 4x4 to 3x3, remove translation section
     glm::mat4 view_without_translation = glm::mat4(glm::mat3(pCamera_->GetViewMatrix()));
-
+   
     //glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
     skybox->Render(view_without_translation, projection);
@@ -188,7 +197,7 @@ int OG::Scene_Assignment2::Render(double dt)
         light[i].position = glm::vec4(spheres_[i]->position_, 0.0f);
         light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
 
-
+        
         OBJECT->models_[spheres_[i]->getName()]->Draw(shaders_[current_shader].get());
         /************************************* ADD LIGHT UNIFORM BUFFER DATA ****************************************************************************/
         pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
@@ -209,10 +218,20 @@ int OG::Scene_Assignment2::Render(double dt)
         pOrbit->SetupBuffer();
     }
 
-    lightShader->SetUniformMatrix4fv("model", glm::mat4(1.0f));
+    lightShader->SetUniformMatrix4fv("model", pOrbit->model);
+    lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
     pOrbit->DrawOrbit();
 
     shaders_[current_shader]->Use();
+
+    if (bCalcOnCPU)
+    {
+        shaders_[current_shader]->SetUniform1i("uvType", 0);
+    }
+    else
+    {
+        shaders_[current_shader]->SetUniform1i("uvType", (GLint)(OBJECT->models_[current_item]->uvType + 1));
+    }
 
     pFBO->getAttachment("right")->Bind();
     shaders_[current_shader]->SetUniform1i("right", pFBO->getAttachment("right")->texNum_);
@@ -235,16 +254,28 @@ int OG::Scene_Assignment2::Render(double dt)
         glm::vec3 transform = obj->getPosition();
         glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(obj->rotation_angle_), obj->rotation_axis_) * glm::scale(scale);
 
+        pOrbit->model = model;
+
         glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
         shaders_[current_shader]->SetUniformMatrix4fv("normalMatrix", normalMatrix);
 
         shaders_[current_shader]->SetUniformMatrix4fv("model", model);
         shaders_[current_shader]->SetUniform3fv("I_emissive", obj->color_);
+
+        shaders_[current_shader]->SetUniform1f("refractIndex", refract_index);
+        shaders_[current_shader]->SetUniform1f("chromatic_aberration", chromatic_aberration);
+        shaders_[current_shader]->SetUniform1f("fresnelPower", fresnelPower);
+
+        shaders_[current_shader]->SetUniform1f("mixRatio", mixRatio); // environment Mapping + phong mix ratio
+        shaders_[current_shader]->SetUniform1b("b_calcReflect", b_calcReflect);
+        shaders_[current_shader]->SetUniform1b("b_calcRefract", b_calcRefract);
+
         if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
         {
             obj->drawNormal = is_normal_vector_on;
             obj->drawFaceNormal = drawFaceNormal;
             obj->draw(shaders_[current_shader].get());
+
         }
     }
 
@@ -321,132 +352,233 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
     //ImGui::ShowDemoWindow(&show);
 
     {
-        ImGui::Begin("CS300 Assignment 2");
-        if (ImGui::BeginCombo("Central Object", current_item))
-        {
+        ImGui::Begin("Graphics");
 
-            for (const auto& model : OBJECT->models_)
+        if (ImGui::BeginTabBar("Tab Bar"))
+        {
+            if (ImGui::BeginTabItem("General"))
             {
-                bool is_selected =
-                    (current_item ==
-                        model.first.c_str()); // You can store your selection however you want, outside or inside your objects
-                if (ImGui::Selectable(model.first.c_str(), is_selected))
-                    current_item = model.first.c_str();
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-            }
-
-            ImGui::EndCombo();
-        }
-
-		ImGui::ColorEdit3("Emissive", glm::value_ptr(objects_[0]->color_));
-
-        if (ImGui::RadioButton("face normal", drawFaceNormal == true)) { drawFaceNormal = true; } ImGui::SameLine();
-        if (ImGui::RadioButton("vertex normal", !drawFaceNormal == true)) { drawFaceNormal = false; }
-        ImGui::Checkbox("Draw Normal Vector", &is_normal_vector_on);
-
-        ImGui::Separator();
-
-        ImGui::Checkbox("Visualize UV", &bVisualizeTex);
-
-        ImGui::Combo("Texture Entity", (int*)&OBJECT->models_[current_item]->isNormMapping, "POSITION\0NORMAL\0\0");
-        ImGui::Combo("Projection Mode", (int*)&OBJECT->models_[current_item]->uvType, "PLANAR\0CYLINDRICAL\0SPHERICAL\0\0");
-
-		ImGui::Spacing();
-
-        if (bCalcOnCPU)
-        {
-            if (ImGui::Button("Calculate UV"))
-            {
-                OBJECT->models_[current_item]->RemapUV();
-            }
-        }
-
-        ImGui::Spacing();
-
-        if (ImGui::RadioButton("calculate on CPU", bCalcOnCPU == true)) { bCalcOnCPU = true; } ImGui::SameLine();
-        if (ImGui::RadioButton("calculate on GPU", bCalcOnCPU == false)) { bCalcOnCPU = false; }
-
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        if (ImGui::BeginCombo("Shader", current_shader))
-        {
-            for (const auto& shader : shaders_)
-            {
-                bool is_selected =
-                    (current_shader ==
-                        shader.first.c_str()); // You can store your selection however you want, outside or inside your objects
-                if (ImGui::Selectable(shader.first.c_str(), is_selected))
-                    current_shader = shader.first.c_str();
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-
-            }
-
-            ImGui::EndCombo();
-        }
-        if (ImGui::Button("Reload Shader"))
-        {
-            shaders_[current_shader]->ReloadShaders();
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        if (ImGui::CollapsingHeader("Global"))
-        {
-            ImGui::SliderFloat3("Attenutation", glm::value_ptr(att), 0.0f, 1.0f);
-            ImGui::ColorEdit3("Global Ambient Color", glm::value_ptr(global_ambient));
-            ImGui::ColorEdit3("Global Fog Color", glm::value_ptr(fog_color));
-            ImGui::SliderFloat("Near", &near, 0.0f, far);
-            ImGui::SliderFloat("Far", &far, near, 100.0f);
-        }
-
-
-        if (ImGui::CollapsingHeader("Light"))
-        {
-            ImGui::Text("Lighting Scenarios");
-            if (ImGui::Button("Scenario 1")) setScenario1(); ImGui::SameLine();
-            if (ImGui::Button("Scenario 2")) setScenario2(); ImGui::SameLine();
-            if (ImGui::Button("Scenario 3")) setScenario3();
-
-            ImGui::SliderFloat("Orbit Radius", &pOrbit->radius, 1.0f, 10.0f);
-            ImGui::SliderFloat("Rotation Speed", &rotation_speed, -3.0f, 3.0f);
-            ImGui::Checkbox("Rotate", &isRotating);
-
-            ImGui::Separator();
-
-            // Slider for num_of_lights
-            ImGui::SliderInt("Number of Light", &num_of_lights, 1, 16);
-
-            for (int i = 0; i < num_of_lights; ++i)
-            {
-                std::string lightName = "light" + std::to_string(i + 1);
-                if (ImGui::TreeNode(lightName.c_str()))
+                if (ImGui::BeginCombo("Central Object", current_item))
                 {
 
-                    ImGui::ColorEdit3("ambient", glm::value_ptr(light[i].ambient), ImGuiColorEditFlags_::ImGuiColorEditFlags_InputRGB);
-                    ImGui::ColorEdit3("diffuse", glm::value_ptr(light[i].diffuse));
-                    ImGui::ColorEdit3("specular", glm::value_ptr(light[i].specular));
-
-                    ImGui::RadioButton("Point", (int*)&light[i].type, 0); ImGui::SameLine();
-                    ImGui::RadioButton("Spot", (int*)&light[i].type, 1); ImGui::SameLine();
-                    ImGui::RadioButton("Dir", (int*)&light[i].type, 2);
-
-                    if (light[i].type == lightType::E_SPOT)
+                    for (const auto& model : OBJECT->models_)
                     {
-                        ImGui::SliderFloat("Inner Angle", &light[i].cutOff, 0.0f, 90.0f);
-                        ImGui::SliderFloat("Outer Angle", &light[i].outerCutOff, 0.0f, 90.0f);
-                        ImGui::SliderFloat("Fall off", &light[i].fallOut, 0.0f, 10.0f);
+                        bool is_selected =
+                            (current_item ==
+                                model.first.c_str()); // You can store your selection however you want, outside or inside your objects
+                        if (ImGui::Selectable(model.first.c_str(), is_selected))
+                            current_item = model.first.c_str();
+                        if (is_selected)
+                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
                     }
 
-                    // Radio button for light type
-                    ImGui::TreePop();
+                    ImGui::EndCombo();
                 }
+
+				ImGui::Spacing();
+				ImGui::Separator();
+
+				if (ImGui::RadioButton("face normal", drawFaceNormal == true)) { drawFaceNormal = true; } ImGui::SameLine();
+				if (ImGui::RadioButton("vertex normal", !drawFaceNormal == true)) { drawFaceNormal = false; }
+				ImGui::Checkbox("Draw Normal Vector", &is_normal_vector_on);
+
+                ImGui::Spacing();
+                ImGui::Separator();
+
+                if (ImGui::BeginCombo("Shader", current_shader))
+                {
+                    for (const auto& shader : shaders_)
+                    {
+                        bool is_selected =
+                            (current_shader ==
+                                shader.first.c_str()); // You can store your selection however you want, outside or inside your objects
+                        if (ImGui::Selectable(shader.first.c_str(), is_selected))
+                            current_shader = shader.first.c_str();
+                        if (is_selected)
+                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                ImGui::Spacing();
+
+                if (ImGui::Button("Reload Shader"))
+                {
+                    shaders_[current_shader]->ReloadShaders();
+                }
+
+                ImGui::EndTabItem();
             }
 
-        }
+            if (ImGui::BeginTabItem("Material"))
+            {
+                ImGui::SliderFloat("Blending", &mixRatio, 0.0f, 1.0f);
 
+                ImGui::Separator();
+
+                ImGui::ColorEdit3("Emissive", glm::value_ptr(objects_[0]->color_));
+
+                ImGui::Separator();
+
+                ImGui::Checkbox("Visualize UV", &bVisualizeTex);
+
+                ImGui::Combo("Texture Entity", (int*)&OBJECT->models_[current_item]->isNormMapping, "POSITION\0NORMAL\0\0");
+                ImGui::Combo("Projection Mode", (int*)&OBJECT->models_[current_item]->uvType, "PLANAR\0CYLINDRICAL\0SPHERICAL\0NONE\0\0");
+
+                ImGui::Spacing();
+
+                if (bCalcOnCPU)
+                {
+                    if (ImGui::Button("Calculate UV"))
+                    {
+                        OBJECT->models_[current_item]->RemapUV();
+                    }
+                }
+
+                ImGui::Spacing();
+
+                if (ImGui::RadioButton("calculate on CPU", bCalcOnCPU == true)) { bCalcOnCPU = true; } ImGui::SameLine();
+                if (ImGui::RadioButton("calculate on GPU", bCalcOnCPU == false)) { bCalcOnCPU = false; }
+
+                ImGui::Separator();
+                ImGui::Spacing();
+
+                ImGui::Checkbox("Calculate Reflect", &b_calcReflect);
+                ImGui::Checkbox("Calculate Refract", &b_calcRefract);\
+
+				ImGui::Spacing();
+                ImGui::Separator();
+
+                if (b_calcRefract) {
+                    //ImGui::SliderFloat("Refraction Index", )
+
+                    const char* refract_name[] = { "Air", "Hydrogen", "Water", "Olive Oil", "Ice", "Quartz", "Diamond", "Acrylic"};
+
+                    
+                    ImGui::PushItemWidth(80);
+					ImGui::Text("Refraction ");
+                    ImGui::SameLine();
+					ImGui::Text("Refraction Index ");
+                    ImGui::SameLine();
+                    ImGui::Text("Chromatic Aberration");
+
+                    ImGui::PushID(0);
+                    if (ImGui::BeginListBox("", ImVec2(80, 120)))
+                    {
+                        for (int i = 0; i < sizeof(refract_name) / sizeof(refract_name[0]); ++i)
+                        {
+                            const bool is_selected = (index_of_refract_items == i);
+                            if (ImGui::Selectable(refract_name[i], is_selected))
+                                index_of_refract_items = i;
+
+                            if (is_selected)
+                            {
+                                ImGui::SetItemDefaultFocus();
+                                refract_index = refraction[index_of_refract_items];
+                            }
+                        }
+
+                        ImGui::EndListBox();
+                    }
+                    ImGui::PopID();
+					ImGui::SameLine();
+
+                    ImGui::PushID(1);
+                    if (ImGui::VSliderFloat(" ", ImVec2(100, 120), &refract_index, 1.0f, 100.0f, "%.1f"))
+                    {
+                        index_of_refract_items = 7;
+                    }
+                    ImGui::PopID();
+
+                    ImGui::SameLine();
+
+					ImGui::PushID(2);
+                    ImGui::VSliderFloat(" ", ImVec2(100, 120), &chromatic_aberration, 0.0f, 1.0f,"%.3f");
+                    ImGui::PopID();
+
+
+                    ImGui::Dummy(ImVec2(10.0f, 1.0f));
+                    ImGui::PopItemWidth();
+
+                }
+
+		        ImGui::Spacing();
+				ImGui::Separator();
+
+                if (b_calcReflect && b_calcRefract)
+                {
+                    ImGui::SliderFloat("Fresnel Power", &fresnelPower, 0.1f, 10.0f);
+                }
+
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Global Constant"))
+            {
+                if (ImGui::CollapsingHeader("Global"))
+                {
+                    ImGui::SliderFloat3("Attenutation", glm::value_ptr(att), 0.0f, 1.0f);
+                    ImGui::ColorEdit3("Global Ambient Color", glm::value_ptr(global_ambient));
+                    ImGui::ColorEdit3("Global Fog Color", glm::value_ptr(fog_color));
+                    ImGui::SliderFloat("Near", &near, 0.0f, far);
+                    ImGui::SliderFloat("Far", &far, near, 100.0f);
+                }
+
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Light"))
+            {
+                if (ImGui::CollapsingHeader("Light"))
+                {
+                    ImGui::Text("Lighting Scenarios");
+                    if (ImGui::Button("Scenario 1")) setScenario1(); ImGui::SameLine();
+                    if (ImGui::Button("Scenario 2")) setScenario2(); ImGui::SameLine();
+                    if (ImGui::Button("Scenario 3")) setScenario3();
+
+                    ImGui::SliderFloat("Orbit Radius", &pOrbit->radius, 1.0f, 10.0f);
+                    ImGui::SliderFloat("Rotation Speed", &rotation_speed, -3.0f, 3.0f);
+                    ImGui::Checkbox("Rotate", &isRotating);
+
+                    ImGui::Separator();
+
+                    // Slider for num_of_lights
+                    ImGui::SliderInt("Number of Light", &num_of_lights, 1, 16);
+
+                    for (int i = 0; i < num_of_lights; ++i)
+                    {
+                        std::string lightName = "light" + std::to_string(i + 1);
+                        if (ImGui::TreeNode(lightName.c_str()))
+                        {
+
+                            ImGui::ColorEdit3("ambient", glm::value_ptr(light[i].ambient), ImGuiColorEditFlags_::ImGuiColorEditFlags_InputRGB);
+                            ImGui::ColorEdit3("diffuse", glm::value_ptr(light[i].diffuse));
+                            ImGui::ColorEdit3("specular", glm::value_ptr(light[i].specular));
+
+                            ImGui::RadioButton("Point", (int*)&light[i].type, 0); ImGui::SameLine();
+                            ImGui::RadioButton("Spot", (int*)&light[i].type, 1); ImGui::SameLine();
+                            ImGui::RadioButton("Dir", (int*)&light[i].type, 2);
+
+                            if (light[i].type == lightType::E_SPOT)
+                            {
+                                ImGui::SliderFloat("Inner Angle", &light[i].cutOff, 0.0f, 90.0f);
+                                ImGui::SliderFloat("Outer Angle", &light[i].outerCutOff, 0.0f, 90.0f);
+                                ImGui::SliderFloat("Fall off", &light[i].fallOut, 0.0f, 10.0f);
+                            }
+
+                            // Radio button for light type
+                            ImGui::TreePop();
+                        }
+                    }
+                }
+
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+        }
 
         ImGui::End();
     }
@@ -468,9 +600,9 @@ void OG::Scene_Assignment2::CleanupImGui()
 /// </summary>
 void OG::Scene_Assignment2::setFramebuffer()
 {
+    pFBO->init(_windowWidth, _windowHeight);
     pFBO->bind();
 
-    //pCamera_->Zoom = 90.0f;
     std::unique_ptr<Texture> right = std::make_unique<Texture>(_windowWidth, _windowHeight, 2);
     std::unique_ptr<Texture> left = std::make_unique<Texture>(_windowWidth, _windowHeight, 3);
     std::unique_ptr<Texture> top = std::make_unique<Texture>(_windowWidth, _windowHeight, 4);
@@ -502,7 +634,8 @@ void OG::Scene_Assignment2::updateFramebuffer()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)_windowWidth / (float)_windowHeight, 0.1f, 100.0f);    pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
+    glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);    
+    pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
 
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4), sizeof(glm::vec3), glm::value_ptr(pCamera_->Position)); // 96 * 4 + 16, 16
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2, sizeof(glm::vec3), glm::value_ptr(global_ambient)); // 96 + 32, 16
@@ -513,6 +646,7 @@ void OG::Scene_Assignment2::updateFramebuffer()
     pUBO_light->AddSubData(sizeof(Light) * 16, sizeof(glm::vec3), glm::value_ptr(att)); //96 * 4, 16
 
     for (int i = 0; i < 6; ++i) {
+        glClear(GL_DEPTH_BUFFER_BIT);
         glm::mat4 view = skybox->camera_lookat[i];
         pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
         glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
@@ -541,6 +675,10 @@ void OG::Scene_Assignment2::updateFramebuffer()
             pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
             offset += static_cast<GLsizei>(sizeof(glm::vec4) * 6);
         }
+
+        lightShader->SetUniformMatrix4fv("model", pOrbit->model);
+        lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
+        pOrbit->DrawOrbit();
     }
 
     pFBO->unbind();
@@ -580,7 +718,9 @@ void OG::Orbit::SetOrbit()
 void OG::Orbit::DrawOrbit()
 {
     pVAO->Bind();
+    glLineWidth(4.0f);
     glDrawElements(GL_LINES, static_cast<GLsizei>(orbit_indices.size()), GL_UNSIGNED_INT, 0);
+    glLineWidth(1.0f);
     pVAO->UnBind();
 }
 

@@ -28,5 +28,6 @@ void main()
     vs_out.TexCoords = vUV;
     vs_out.Pos = vPos;
     vs_out.Norm = vNormal;
+
     gl_Position = projection * view * vec4(vs_out.fragPos, 1.0);
 }

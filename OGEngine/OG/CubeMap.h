@@ -9,6 +9,7 @@ namespace OG {
 	class SkyboxTexture;
 	class Model;
 	class Shader;
+	class Camera;
 
 	class CubeMap {
 	public:
@@ -18,6 +19,7 @@ namespace OG {
 		void Render(const glm::mat4& view, const glm::mat4& projection);
 
 		std::vector<glm::mat4> camera_lookat;
+		std::vector < std::unique_ptr<Camera>> cameras;
 	private:
 		std::vector<std::unique_ptr<SkyboxTexture>> faces;
 		std::unique_ptr<Model> skybox;

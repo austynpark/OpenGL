@@ -28,7 +28,7 @@ namespace OG
 
     // Default camera values
     const float YAW = -90.0f;
-    const float PITCH = -15.0f;
+    const float PITCH = 0.0f;//-15.0f;
     const float SPEED = 2.5f;
     const float SENSITIVITY = 10.0f;
     const float ZOOM = 45.0f;

@@ -26,7 +26,7 @@ vec4 CalcCubeMap(vec3 vEntity)
         // POSITIVE & NEGATIVE X
         if ((absX >= absY) && (absX >= absZ))
         {
-			uv.y = y / absX;
+			uv.y = -y / absX;
 
             if (x > 0)
             {
@@ -46,19 +46,19 @@ vec4 CalcCubeMap(vec3 vEntity)
 
             if (y > 0)
             {
-                uv.y = -z / absY;
+                uv.y = z / absY;
                 return texture(top, (uv + vec2(1.0)) * 0.5f);
             }
             else
             {
-                uv.y = z / absY;
+                uv.y = -z / absY;
                 return texture(bottom, (uv + vec2(1.0)) * 0.5f);
             }
         }
         // POSITIVE & NEGATIVE Z
         else if (absZ >= absX && absZ >= absY)
         {
-			uv.y = y / absZ;
+			uv.y = -y / absZ;
 
             if (z > 0)
             {

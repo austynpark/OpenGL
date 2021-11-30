@@ -485,8 +485,7 @@ namespace OG
 
                 break;
 
-            case UVType::CUBE_MAPPED_UV:
-                //uv = calcCubeMap(centroidVec);
+            case UVType::NONE_UV:
                 break;
             }
 

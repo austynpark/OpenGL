@@ -3,10 +3,10 @@
 namespace OG
 {
     enum UVType {
-        PLANAR_UV = 0,
+        PLANAR_UV = 0, // Cube Map
         CYLINDRICAL_UV,
         SPHERICAL_UV,
-        CUBE_MAPPED_UV
+        NONE_UV
     };
 
     enum UVCalc

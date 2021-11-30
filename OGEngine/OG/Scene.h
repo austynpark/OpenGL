@@ -55,6 +55,8 @@ namespace OG
         // cleanup before destruction
         virtual void CleanUp();
 
+        virtual void setFramebuffer() = 0;
+
         // IMGUI stuff
         virtual void SetupImGui(GLFWwindow* pWindow) = 0;
         virtual void DrawImGui(GLFWwindow* pWindow) = 0;

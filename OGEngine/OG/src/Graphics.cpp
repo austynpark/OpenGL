@@ -56,7 +56,7 @@ namespace OG
 
 		// Open a window and create its OpenGL context
 		window = glfwCreateWindow(windowWidth, windowHeight, // window dimensions
-			"Sample 1 - Simple scene (Quad) with Scene Class", // window title
+			"OpenGL Graphics Engine", // window title
 			nullptr, // which monitor (if full-screen mode)
 			nullptr); // if sharing context with another window
 
@@ -169,6 +169,7 @@ namespace OG
 		if (GRAPHICS->GetScene() != nullptr)
 		{
 			GRAPHICS->GetScene()->SetWindowSize(width, height);
+			GRAPHICS->GetScene()->setFramebuffer();
 		}
 	}
 
