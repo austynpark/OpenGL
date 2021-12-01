@@ -1,17 +1,14 @@
 /* Start Header -------------------------------------------------------
-Copyright (C) 2021 DigiPen Institute of Technology.
-Reproduction or disclosure of this file or its contents without the prior written
-consent of DigiPen Institute of Technology is prohibited.
 File Name: README.md
 Purpose: Load files and render with OpenGL4
 Language: C++ / Visual Studio 2019
 Platform: Visual Studio 2019, OpenGL4.5, Windows 10 x64 
-Project: kyungook.park_CS330
-Author: Austyn park / kyungook.park / 180001621
+Project: OG engine (OpenGL Graphics Renderer)
+Author: Austyn park / kyungook.park
 Creation date: 10/01/21
 End Header --------------------------------------------------------*/
 
-# CS300 Assignment3
+# OPENGL RENDERER
 
 ## README REQUIREMENTS
 
@@ -53,24 +50,9 @@ Reflect / Refract
 2. Scene & Environment Map generation Setup
 3. Environment Map application in shaders
 4. User Interactivity - Rendering
-
-### (d) Uncompleted Part
-- None
-
-### (e) Relevant Source Code Location
-1. FBO
-	- file path 	: OGEngine\OG\src
-	- file name 	: FBO.cpp, Scene_Assignment2.cpp
-	- function name : setFramebuffer, updateFramebuffer
-
-2. Reflect / Refract
-	- file path 	: OGEngine\OG\shaders
-	- file name 	: PhongShading.frag, PhongShading.vert
-	- function name : CalcRefract / CalcCubeMap / CalcReflectMap
-
-3. Skybox
-	- file path 	: OGEngine\OG\src
-	- file name 	: CubeMap.cpp
+5. Reflection / Refraction
+6. UV mapping (CPU / GPU)
+7. Basic lighting
 
 ### (f) Machine Tested
 
@@ -87,10 +69,6 @@ Reflect / Refract
 - GL Maximum texture size: 16384
 - GL Maximum Viewport Dimensions: 16384x16384
 - Maximum vertex attributes: 29
-
-### (g) Hours spent on the Assignment (On a Weekly basis)
-
-- 8 Hour
 
 ### (h) Extra Info
 
