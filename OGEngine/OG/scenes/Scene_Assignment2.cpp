@@ -50,6 +50,7 @@ skybox(std::make_unique<CubeMap>())
     refraction[5] = 1.46f; // Quartz
     refraction[6] = 2.42f; // Diamond
     refraction[7] = 1.49f; // Acrylic
+    refraction[8] = 0.0f;
 
     refract_index = refraction[0];
     chromatic_aberration = 0.01f;
@@ -90,7 +91,6 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
     OBJECT->models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
     OBJECT->models_["sphere_mesh"] = std::make_unique<Model>(Mesh::CreateSphere(0.1f, 36, 18));
-    /*
     OBJECT->models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
     OBJECT->models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
     OBJECT->models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
@@ -100,7 +100,7 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
     OBJECT->models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
     OBJECT->models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
-    */
+
     for (int i = 0; i < 16; ++i)
     {
         spheres_.emplace_back(std::move(
@@ -446,7 +446,7 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
                 ImGui::Spacing();
 
                 ImGui::Checkbox("Calculate Reflect", &b_calcReflect);
-                ImGui::Checkbox("Calculate Refract", &b_calcRefract);\
+                ImGui::Checkbox("Calculate Refract", &b_calcRefract);
 
 				ImGui::Spacing();
                 ImGui::Separator();
@@ -467,7 +467,7 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
                     ImGui::PushID(0);
                     if (ImGui::BeginListBox("", ImVec2(80, 120)))
                     {
-                        for (int i = 0; i < sizeof(refract_name) / sizeof(refract_name[0]); ++i)
+                        for (int i = 0; i < sizeof(refract_name) / sizeof(refract_name[0]) - 1; ++i)
                         {
                             const bool is_selected = (index_of_refract_items == i);
                             if (ImGui::Selectable(refract_name[i], is_selected))
@@ -488,7 +488,8 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
                     ImGui::PushID(1);
                     if (ImGui::VSliderFloat(" ", ImVec2(100, 120), &refract_index, 1.0f, 100.0f, "%.1f"))
                     {
-                        index_of_refract_items = 7;
+                        // refract[8] will have not setted ( it'll just use slider value)
+                        index_of_refract_items = 8;
                     }
                     ImGui::PopID();
 

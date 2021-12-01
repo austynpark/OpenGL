@@ -11,7 +11,7 @@ Author: Austyn park / kyungook.park / 180001621
 Creation date: 10/01/21
 End Header --------------------------------------------------------*/
 
-# CS300 Assignment2
+# CS300 Assignment3
 
 ## README REQUIREMENTS
 
@@ -43,53 +43,34 @@ Light
 - Toggle between the three scenarios
 - Toggle 'Rotate' to pause/start the light rotation
 
+Reflect / Refract
+- Turning Reflect & Refract will enable Fresnel
 
 
 ### (c) Completed Part
 
-1. Shaders
-	- Phonh Lighting
-	- Phong Shading
-	- Blinn Shading
-
-2. Scene & Light Setup
-	- Point light
-	- Directional light
-	- Spotlight
-
-3. Material Setup
-	- CPU calculation
-	- GPU calculation
-	- Texture Entity
-
-4. Light properties
-	- Global constants passed by uniform / uniform block
-	- Per-light values
-
-5. All fo GUI features Implemented
+1. Sky box rendering
+2. Scene & Environment Map generation Setup
+3. Environment Map application in shaders
+4. User Interactivity - Rendering
 
 ### (d) Uncompleted Part
-
 - None
 
 ### (e) Relevant Source Code Location
-1. Light
+1. FBO
 	- file path 	: OGEngine\OG\src
-	- file name 	: Scene_Assignment2.h
+	- file name 	: FBO.cpp, Scene_Assignment2.cpp
+	- function name : setFramebuffer, updateFramebuffer
 
-2. Shader
-	- file path 	: OGEngine\OG\src
-	- file name 	: *SHADER_NAME*.frag, *SHADER_NAME*.vert, shader.cpp
-	- function name : LoadShaders
+2. Reflect / Refract
+	- file path 	: OGEngine\OG\shaders
+	- file name 	: PhongShading.frag, PhongShading.vert
+	- function name : CalcRefract / CalcCubeMap / CalcReflectMap
 
-3. Scene
+3. Skybox
 	- file path 	: OGEngine\OG\src
-	- file name 	: Scene_Assignment2.cpp,  Mesh.cpp
-	- function name : SetBuffer, SetOrbit, DrawOrbit / CreateSphere, calcVertexPositionForBoundingBox, Draw
-
-4. Uniform Buffer
-	- file path 	: OGEngine\OG\src
-	- file name 	: BufferObject.cpp, UniformBuffer.cpp
+	- file name 	: CubeMap.cpp
 
 ### (f) Machine Tested
 
@@ -109,7 +90,7 @@ Light
 
 ### (g) Hours spent on the Assignment (On a Weekly basis)
 
-- 4 Hour
+- 8 Hour
 
 ### (h) Extra Info
 

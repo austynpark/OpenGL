@@ -397,8 +397,6 @@ void main() {
 
     float eta = 1.0f / refractIndex;
 
-    ;
-
     float R = eta - (chromatic_aberration * 0.5f);
     float G = eta + (chromatic_aberration * 0.5f);
     float B = eta + (chromatic_aberration * 1.5f);
@@ -414,16 +412,17 @@ void main() {
     vec3 RefractB = CalcRefract(-viewDir, norm, B);
 	refractColor.b = CalcReflectMap(RefractB).b;
 
-    // Reflect Only
-	vec3 color = reflectColor;
 
     if(b_calcRefract && b_calcReflect) {
-        color = mix(refractColor, reflectColor, Ratio).rgb; // Fresnel
+        vec3 color = mix(refractColor, reflectColor, Ratio).rgb; // Fresnel
+        result = mix(result, color, mixRatio);
     } else if(b_calcRefract) {
-        color = refractColor; // Refract Only
+        vec3 color = refractColor; // Refract Only
+        result = mix(result, color, mixRatio);
+    } else if(b_calcReflect) {
+        vec3 color = reflectColor;
+        result = mix(result, color, mixRatio);
     }
-
-    result = mix(result, color, mixRatio);
 
     fragColor = vec4(result, 1.0);
 }
