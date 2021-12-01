@@ -1,13 +1,10 @@
 /* Start Header -------------------------------------------------------
-Copyright (C) 2021 DigiPen Institute of Technology.
-Reproduction or disclosure of this file or its contents without the prior written
-consent of DigiPen Institute of Technology is prohibited.
 File Name: shader.hpp
 Purpose: Read glsl file ,compile and link loaded shaders into program
 Language: C++
 Platform: Windows x64 / OpenGL 4.5
-Project: austyn.park_CS300_1
-Author: austyn.park / kyungook.park / 180001621
+Project: OG Renderer
+Author: austyn.park / kyungook.park
 Creation date: 2021/09/29
 End Header --------------------------------------------------------*/
 #ifndef SHADER_HPP

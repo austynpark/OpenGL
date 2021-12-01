@@ -1,16 +1,12 @@
 /* Start Header -------------------------------------------------------
-Copyright (C) 2021 DigiPen Institute of Technology.
-Reproduction or disclosure of this file or its contents without the prior written
-consent of DigiPen Institute of Technology is prohibited.
 File Name: Scene_Assignment2.h
 Purpose: Scene2, Implementing Phong Illumination model with texture & different light
 Language: C++
 Platform: Windows x64 / OpenGL 4.5
-Project: austyn.park_CS300_1
-Author: austyn.park / kyungook.park / 180001621
-Creation date: 2021/10/17
+Project: OG Renderer
+Author: austyn.park / kyungook.park
+Creation date: 2021/09/29
 End Header --------------------------------------------------------*/
-
 #ifndef SCENE_ASSIGNMENT2_H
 #define SCENE_ASSIGNMENT2_H
 
