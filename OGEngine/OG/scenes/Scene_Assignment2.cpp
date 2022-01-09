@@ -238,6 +238,7 @@ void OG::Scene_Assignment2::render_deferred_objects()
         shaders_[current_shader]->SetUniform1i("uvType", (GLint)(OBJECT->models_[current_item]->uvType + 1));
     }
 
+#if  0 // envirnoment mapping  
     pFBO->getAttachment("right")->Bind();
     shaders_[current_shader]->SetUniform1i("right", pFBO->getAttachment("right")->texNum_);
     pFBO->getAttachment("left")->Bind();
@@ -250,6 +251,7 @@ void OG::Scene_Assignment2::render_deferred_objects()
     shaders_[current_shader]->SetUniform1i("front", pFBO->getAttachment("front")->texNum_);
     pFBO->getAttachment("back")->Bind();
     shaders_[current_shader]->SetUniform1i("back", pFBO->getAttachment("back")->texNum_);
+#endif
 
     for (const auto& obj : objects_)
     {
@@ -266,14 +268,6 @@ void OG::Scene_Assignment2::render_deferred_objects()
 
         shaders_[current_shader]->SetUniformMatrix4fv("model", model);
         shaders_[current_shader]->SetUniform3fv("I_emissive", obj->color_);
-
-        shaders_[current_shader]->SetUniform1f("refractIndex", refract_index);
-        shaders_[current_shader]->SetUniform1f("chromatic_aberration", chromatic_aberration);
-        shaders_[current_shader]->SetUniform1f("fresnelPower", fresnelPower);
-
-        shaders_[current_shader]->SetUniform1f("mixRatio", mixRatio); // environment Mapping + phong mix ratio
-        shaders_[current_shader]->SetUniform1b("b_calcReflect", b_calcReflect);
-        shaders_[current_shader]->SetUniform1b("b_calcRefract", b_calcRefract);
 
         if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
         {
@@ -332,10 +326,6 @@ void OG::Scene_Assignment2::SetupBuffers()
    // Generate UNIFORM_BUFFER, and Set 'binding point' as an 'index'
     pUBO_transform = std::make_unique<UniformBuffer>(static_cast<GLsizei>(2 * sizeof(glm::mat4)), 0U, GL_DYNAMIC_DRAW);
     pUBO_light = std::make_unique<UniformBuffer>(static_cast<GLsizei>((sizeof(glm::vec4) * 101)), 1U, GL_DYNAMIC_DRAW);
-    //pUBO_global = std::make_unique<UniformBuffer>(static_cast<GLsizei>(sizeof(glm::vec4) + sizeof(glm::vec4)), 2U, GL_DYNAMIC_DRAW);
-
-//	pUBO_global->AddSubData(0, sizeof(glm::vec4), glm::value_ptr(att));
-	//pUBO_global->AddSubData(sizeof(glm::vec4), sizeof(GLfloat), &num_of_lights);
 
 }
 
