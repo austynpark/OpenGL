@@ -305,11 +305,23 @@ vec3 CalcReflectMap(vec3 vEntity)
 }
 
 vec3 CalcRefract(vec3 I, vec3 N, float eta) {
-    float k = 1.0 - eta * eta * (1.0 - dot(N, I) * dot(N, I));
+    
+    float NdotI = dot(N, I);
+
+    /*
+    if(NdotI < 0) {
+        NdotI = -NdotI;
+    } else {
+        N = -N;
+        eta = 1 / eta;
+    }
+    */
+
+    float k = 1.0 - eta * eta * (1.0 - NdotI * NdotI);
     if(k < 0.0)
         return vec3(0.0);
     else
-        return eta * I - (eta * dot(N, I) + sqrt(k)) * N;
+        return eta * I - (eta * NdotI + sqrt(k)) * N;
 }
 
 

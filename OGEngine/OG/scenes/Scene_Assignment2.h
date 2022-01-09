@@ -85,6 +85,10 @@ namespace OG
 		int preRender(double dt) override;
 		int Render(double dt) override;
 		int postRender(double dt) override;
+
+		void render_deferred_objects();
+		void render_debug_objects();
+
 		void setFramebuffer() override;
 
 		void keyboardInput(GLFWwindow* pWindow, float dt) override;

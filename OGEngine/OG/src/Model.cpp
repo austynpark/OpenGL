@@ -31,13 +31,16 @@ namespace OG
 		pMesh_->SetBuffer();
 	}
 
-	void Model::Draw(Shader* shader, bool drawNormal, bool drawFaceNormal)
+	void Model::Draw(Shader* shader)
 	{
 		pMesh_->Draw();
-		if (drawNormal) {
-			pMesh_->DrawNormal(drawFaceNormal);
-		}
 	}
+
+	void Model::DrawNormal(bool drawFaceNormal)
+	{
+		pMesh_->DrawNormal(drawFaceNormal);
+	}
+
 	void Model::RemapUV()
 	{
 		pMesh_->calcUVs(uvType, isNormMapping);

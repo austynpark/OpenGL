@@ -44,9 +44,8 @@ namespace OG
     private:
         GLFWwindow* window = nullptr;
         Scene* scene = nullptr;
-        const int windowWidth = 1380;
-        const int windowHeight = 600;
-
+        const int windowWidth = 1280;
+        const int windowHeight = 1024;
         float lastX = windowWidth / 2.0f;
         float lastY = windowHeight / 2.0f;
         bool firstMouse = true;

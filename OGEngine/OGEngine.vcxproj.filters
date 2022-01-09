@@ -121,7 +121,7 @@
       <Filter>Source Files\OG\source</Filter>
     </ClCompile>
     <ClCompile Include="OG\src\FBO.cpp">
-      <Filter>Source Files\OG\source</Filter>
+      <Filter>Source Files\OG\buffers\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -209,11 +209,11 @@
     <ClInclude Include="OG\Texture.h">
       <Filter>Source Files\OG\buffers</Filter>
     </ClInclude>
-    <ClInclude Include="OG\FBO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OG\CubeMap.h">
       <Filter>Source Files\OG</Filter>
+    </ClInclude>
+    <ClInclude Include="OG\FBO.h">
+      <Filter>Source Files\OG\buffers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

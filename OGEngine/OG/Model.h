@@ -23,11 +23,11 @@ namespace OG
 
 		void LoadModel(const std::string& filepath);
 		
-		void Draw(Shader* shader, bool drawNormal = false, bool drawFaceNormal = true);
+		void Draw(Shader* shader);
+		void DrawNormal(bool drawFaceNormal);
 
 		void RemapUV();
 		
-
 		UVType uvType;
 		bool isNormMapping;
 

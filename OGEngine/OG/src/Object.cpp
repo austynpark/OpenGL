@@ -90,12 +90,18 @@ namespace OG
 	{
 		color_ = col;
 	}
+
 	void Object::setName(const char* name)
 	{
 		name_ = name;
 	}
+
 	void Object::draw(Shader* shader)
 	{
-		models_[name_]->Draw(shader, drawNormal, drawFaceNormal);
+		models_[name_]->Draw(shader);
+	}
+
+	void Object::drawNormal(bool drawFaceNormal) {
+		models_[name_]->DrawNormal(drawFaceNormal);
 	}
 }

@@ -160,8 +160,10 @@ int OG::Scene_Assignment1::Render(double dt)
 
         if (models_.find(obj->getName()) != models_.end())
         {
-            obj->drawNormal = is_normal_vector_on;
-            obj->drawFaceNormal = drawFaceNormal;
+            if (is_normal_vector_on) {
+                obj->drawNormal(drawFaceNormal);
+            }
+
             obj->draw(shader.get());
         }
     }

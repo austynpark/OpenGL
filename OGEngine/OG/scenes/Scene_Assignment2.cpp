@@ -177,6 +177,23 @@ int OG::Scene_Assignment2::Render(double dt)
 	pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
     pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
 
+    render_deferred_objects();
+    
+    render_debug_objects();
+
+    return 0;
+}
+
+int OG::Scene_Assignment2::postRender(double dt)
+{
+    if (isRotating)
+        angleOfRotation += rotation_speed * static_cast<float>(dt) * 100.0f;
+
+	return 0;
+}
+
+void OG::Scene_Assignment2::render_deferred_objects()
+{
     lightShader->Use();
 
     GLsizei offset = 0;
@@ -194,7 +211,7 @@ int OG::Scene_Assignment2::Render(double dt)
         light[i].position = glm::vec4(spheres_[i]->position_, 0.0f);
         light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
 
-        
+
         OBJECT->models_[spheres_[i]->getName()]->Draw(shaders_[current_shader].get());
         /************************************* ADD LIGHT UNIFORM BUFFER DATA ****************************************************************************/
         pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
@@ -210,16 +227,7 @@ int OG::Scene_Assignment2::Render(double dt)
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
     /*************************************************************************************************************************************************/
 
-	if (pOrbit->radius != pOrbit->prev_radius) {
-        pOrbit->prev_radius = pOrbit->radius;
-        pOrbit->SetupBuffer();
-    }
-
-    lightShader->SetUniformMatrix4fv("model", pOrbit->model);
-    lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
-    pOrbit->DrawOrbit();
-
-    shaders_[current_shader]->Use();
+	 shaders_[current_shader]->Use();
 
     if (bCalcOnCPU)
     {
@@ -269,22 +277,32 @@ int OG::Scene_Assignment2::Render(double dt)
 
         if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
         {
-            obj->drawNormal = is_normal_vector_on;
-            obj->drawFaceNormal = drawFaceNormal;
             obj->draw(shaders_[current_shader].get());
-
         }
     }
-
-    return 0;
 }
 
-int OG::Scene_Assignment2::postRender(double dt)
+/*
+* Debug objects refer orbit, ray, vertex normal, face normal...
+*/
+void OG::Scene_Assignment2::render_debug_objects()
 {
-    if (isRotating)
-        angleOfRotation += rotation_speed * static_cast<float>(dt) * 100.0f;
+    lightShader->Use();
 
-	return 0;
+    if (pOrbit->radius != pOrbit->prev_radius) {
+        pOrbit->prev_radius = pOrbit->radius;
+        pOrbit->SetupBuffer();
+    }
+
+    lightShader->SetUniformMatrix4fv("model", pOrbit->model);
+    lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
+    pOrbit->DrawOrbit();
+
+    for (const auto& obj : objects_) {
+        if (is_normal_vector_on)
+            obj->drawNormal(drawFaceNormal);
+    }
+
 }
 
 void OG::Scene_Assignment2::keyboardInput(GLFWwindow* pWindow, float dt)
