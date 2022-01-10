@@ -52,7 +52,7 @@ void OG::CubeMap::Render(const glm::mat4& view, const glm::mat4& projection)
 
 	shader->SetUniformMatrix4fv("view", view);
 	shader->SetUniformMatrix4fv("projection", projection);
-	skybox->Draw(shader.get());
+	skybox->Draw();
 
 	for (int i = 0; i < 6; ++i) {
 		faces[i]->UnBind();

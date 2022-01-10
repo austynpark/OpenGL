@@ -247,5 +247,11 @@
     <None Include="OG\shaders\BlinnPhong.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="OG\shaders\GBuffer.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OG\shaders\GBuffer.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

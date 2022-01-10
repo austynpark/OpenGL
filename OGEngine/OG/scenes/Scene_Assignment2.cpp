@@ -38,25 +38,6 @@ skybox(std::make_unique<CubeMap>())
     is_normal_vector_on = false;
     drawFaceNormal = false;
     bCalcOnCPU = false;
-
-    refraction[0] = 1.0003f; // Air
-    refraction[1] = 1.000132f; // Hydrogen
-    refraction[2] = 1.33f; // Water
-    refraction[3] = 1.47f; // Olive Oil
-    refraction[4] = 1.31f; // Ice
-    refraction[5] = 1.46f; // Quartz
-    refraction[6] = 2.42f; // Diamond
-    refraction[7] = 1.49f; // Acrylic
-    refraction[8] = 0.0f;
-
-    refract_index = refraction[0];
-    chromatic_aberration = 0.01f;
-    index_of_refract_items = 0;
-
-    b_calcReflect = true;
-    b_calcRefract = true;
-    mixRatio = 1.0f;
-    fresnelPower = 2.0f;
 }
 
 OG::Scene_Assignment2::~Scene_Assignment2()
@@ -65,9 +46,15 @@ OG::Scene_Assignment2::~Scene_Assignment2()
 
 int OG::Scene_Assignment2::Init()
 {
+    // create gbuffer graphics pipeline
+    gbuffer_shader = std::make_unique<Shader>("GBuffer.vert", "GBuffer.frag");
+
     shaders_["PhongShading"] = std::make_unique<Shader>("PhongShading.vert", "PhongShading.frag");
-    //shaders_["PhongLighting"] = std::make_unique<Shader>("PhongLighting.vert", "PhongLighting.frag");
-    //shaders_["BlinnPhong"] = std::make_unique<Shader>("BlinnPhong.vert", "BlinnPhong.frag");
+
+#if 0
+    shaders_["PhongLighting"] = std::make_unique<Shader>("PhongLighting.vert", "PhongLighting.frag");
+    shaders_["BlinnPhong"] = std::make_unique<Shader>("BlinnPhong.vert", "BlinnPhong.frag");
+#endif
     
     current_shader = "PhongShading";
     
@@ -88,6 +75,7 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
     OBJECT->models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
     OBJECT->models_["sphere_mesh"] = std::make_unique<Model>(Mesh::CreateSphere(0.1f, 36, 18));
+#if 0
     OBJECT->models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
     OBJECT->models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
     OBJECT->models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
@@ -97,6 +85,7 @@ int OG::Scene_Assignment2::Init()
     OBJECT->models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
     OBJECT->models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
     OBJECT->models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
+#endif
 
     for (int i = 0; i < 16; ++i)
     {
@@ -127,8 +116,6 @@ int OG::Scene_Assignment2::preRender(double dt)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    //glEnable(GL_DEBUG_OUTPUT);
-    //glEnable(GL_STENCIL_TEST);
 
     glCullFace(GL_BACK);
 
@@ -151,17 +138,8 @@ int OG::Scene_Assignment2::Render(double dt)
 
     lightShader->SetUniformBlock("Transforms", 0U);
 
-    shaders_[current_shader]->SetUniformBlock("Transforms", 0U);
+    gbuffer_shader->SetUniformBlock("Transforms", 0U);
     shaders_[current_shader]->SetUniformBlock("LightInfo", 1U);
-
-    shaders_[current_shader]->SetUniform1i("diffuse_texture", pDiffuseTexture->texNum_);
-    shaders_[current_shader]->SetUniform1i("specular_texture", pSpecularTexture->texNum_);
-
-    if (!bVisualizeTex)
-        pDiffuseTexture->Bind();
-    else
-        pVisualizeTexture->Bind();
-    pSpecularTexture->Bind();
 
     // By converting view matrix 4x4 to 3x3, remove translation section
     glm::mat4 view_without_translation = glm::mat4(glm::mat3(pCamera_->GetViewMatrix()));
@@ -172,7 +150,7 @@ int OG::Scene_Assignment2::Render(double dt)
     //glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
 
-    updateFramebuffer();
+    //updateFramebuffer();
 
 	pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
     pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
@@ -194,6 +172,61 @@ int OG::Scene_Assignment2::postRender(double dt)
 
 void OG::Scene_Assignment2::render_deferred_objects()
 {
+	pFBO->bind();
+    //pFBO->bind_attachments();
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+
+    gbuffer_shader->Use();
+	gbuffer_shader->SetUniform1i("diffuse_texture", pDiffuseTexture->texNum_);
+    gbuffer_shader->SetUniform1i("specular_texture", pSpecularTexture->texNum_);
+
+    if (!bVisualizeTex)
+        pDiffuseTexture->Bind();
+    else
+        pVisualizeTexture->Bind();
+    pSpecularTexture->Bind();
+
+
+    if (bCalcOnCPU)
+    {
+        gbuffer_shader->SetUniform1i("uvType", 0);
+    }
+    else
+    {
+        gbuffer_shader->SetUniform1i("uvType", (GLint)(OBJECT->models_[current_item]->uvType + 1));
+    }
+
+    for (const auto& obj : objects_)
+    {
+        obj->setName(current_item);
+
+        glm::vec3 scale = obj->getScale();
+        glm::vec3 transform = obj->getPosition();
+        glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(obj->rotation_angle_), obj->rotation_axis_) * glm::scale(scale);
+
+        pOrbit->model = model;
+
+        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
+        gbuffer_shader->SetUniformMatrix4fv("normalMatrix", normalMatrix);
+
+        gbuffer_shader->SetUniformMatrix4fv("model", model);
+        gbuffer_shader->SetUniform3fv("I_emissive", obj->color_);
+
+        if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
+        {
+            obj->draw();
+        }
+    }
+}
+
+/*
+* Debug objects refer orbit, ray, vertex normal, face normal...
+*/
+void OG::Scene_Assignment2::render_debug_objects()
+{
     lightShader->Use();
 
     GLsizei offset = 0;
@@ -212,7 +245,7 @@ void OG::Scene_Assignment2::render_deferred_objects()
         light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
 
 
-        OBJECT->models_[spheres_[i]->getName()]->Draw(shaders_[current_shader].get());
+        OBJECT->models_[spheres_[i]->getName()]->Draw();
         /************************************* ADD LIGHT UNIFORM BUFFER DATA ****************************************************************************/
         pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
         offset += static_cast<GLsizei>(sizeof(glm::vec4) * 6);
@@ -226,62 +259,6 @@ void OG::Scene_Assignment2::render_deferred_objects()
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat), sizeof(GLfloat), &far);
     pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
     /*************************************************************************************************************************************************/
-
-	 shaders_[current_shader]->Use();
-
-    if (bCalcOnCPU)
-    {
-        shaders_[current_shader]->SetUniform1i("uvType", 0);
-    }
-    else
-    {
-        shaders_[current_shader]->SetUniform1i("uvType", (GLint)(OBJECT->models_[current_item]->uvType + 1));
-    }
-
-#if  0 // envirnoment mapping  
-    pFBO->getAttachment("right")->Bind();
-    shaders_[current_shader]->SetUniform1i("right", pFBO->getAttachment("right")->texNum_);
-    pFBO->getAttachment("left")->Bind();
-    shaders_[current_shader]->SetUniform1i("left", pFBO->getAttachment("left")->texNum_);
-    pFBO->getAttachment("top")->Bind();
-    shaders_[current_shader]->SetUniform1i("top", pFBO->getAttachment("top")->texNum_);
-    pFBO->getAttachment("bottom")->Bind();
-    shaders_[current_shader]->SetUniform1i("bottom", pFBO->getAttachment("bottom")->texNum_);
-    pFBO->getAttachment("front")->Bind();
-    shaders_[current_shader]->SetUniform1i("front", pFBO->getAttachment("front")->texNum_);
-    pFBO->getAttachment("back")->Bind();
-    shaders_[current_shader]->SetUniform1i("back", pFBO->getAttachment("back")->texNum_);
-#endif
-
-    for (const auto& obj : objects_)
-    {
-        obj->setName(current_item);
-
-        glm::vec3 scale = obj->getScale();
-        glm::vec3 transform = obj->getPosition();
-        glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(obj->rotation_angle_), obj->rotation_axis_) * glm::scale(scale);
-
-        pOrbit->model = model;
-
-        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
-        shaders_[current_shader]->SetUniformMatrix4fv("normalMatrix", normalMatrix);
-
-        shaders_[current_shader]->SetUniformMatrix4fv("model", model);
-        shaders_[current_shader]->SetUniform3fv("I_emissive", obj->color_);
-
-        if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
-        {
-            obj->draw(shaders_[current_shader].get());
-        }
-    }
-}
-
-/*
-* Debug objects refer orbit, ray, vertex normal, face normal...
-*/
-void OG::Scene_Assignment2::render_debug_objects()
-{
-    lightShader->Use();
 
     if (pOrbit->radius != pOrbit->prev_radius) {
         pOrbit->prev_radius = pOrbit->radius;
@@ -417,110 +394,6 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Material"))
-            {
-                ImGui::SliderFloat("Blending", &mixRatio, 0.0f, 1.0f);
-
-                ImGui::Separator();
-
-                ImGui::ColorEdit3("Emissive", glm::value_ptr(objects_[0]->color_));
-
-                ImGui::Separator();
-
-                ImGui::Checkbox("Visualize UV", &bVisualizeTex);
-
-                ImGui::Combo("Texture Entity", (int*)&OBJECT->models_[current_item]->isNormMapping, "POSITION\0NORMAL\0\0");
-                ImGui::Combo("Projection Mode", (int*)&OBJECT->models_[current_item]->uvType, "PLANAR\0CYLINDRICAL\0SPHERICAL\0NONE\0\0");
-
-                ImGui::Spacing();
-
-                if (bCalcOnCPU)
-                {
-                    if (ImGui::Button("Calculate UV"))
-                    {
-                        OBJECT->models_[current_item]->RemapUV();
-                    }
-                }
-
-                ImGui::Spacing();
-
-                if (ImGui::RadioButton("calculate on CPU", bCalcOnCPU == true)) { bCalcOnCPU = true; } ImGui::SameLine();
-                if (ImGui::RadioButton("calculate on GPU", bCalcOnCPU == false)) { bCalcOnCPU = false; }
-
-                ImGui::Separator();
-                ImGui::Spacing();
-
-                ImGui::Checkbox("Calculate Reflect", &b_calcReflect);
-                ImGui::Checkbox("Calculate Refract", &b_calcRefract);
-
-				ImGui::Spacing();
-                ImGui::Separator();
-
-                if (b_calcRefract) {
-                    //ImGui::SliderFloat("Refraction Index", )
-
-                    const char* refract_name[] = { "Air", "Hydrogen", "Water", "Olive Oil", "Ice", "Quartz", "Diamond", "Acrylic"};
-
-                    
-                    ImGui::PushItemWidth(80);
-					ImGui::Text("Refraction ");
-                    ImGui::SameLine();
-					ImGui::Text("Refraction Index ");
-                    ImGui::SameLine();
-                    ImGui::Text("Chromatic Aberration");
-
-                    ImGui::PushID(0);
-                    if (ImGui::BeginListBox("", ImVec2(80, 120)))
-                    {
-                        for (int i = 0; i < sizeof(refract_name) / sizeof(refract_name[0]) - 1; ++i)
-                        {
-                            const bool is_selected = (index_of_refract_items == i);
-                            if (ImGui::Selectable(refract_name[i], is_selected))
-                                index_of_refract_items = i;
-
-                            if (is_selected)
-                            {
-                                ImGui::SetItemDefaultFocus();
-                                refract_index = refraction[index_of_refract_items];
-                            }
-                        }
-
-                        ImGui::EndListBox();
-                    }
-                    ImGui::PopID();
-					ImGui::SameLine();
-
-                    ImGui::PushID(1);
-                    if (ImGui::VSliderFloat(" ", ImVec2(100, 120), &refract_index, 1.0f, 100.0f, "%.1f"))
-                    {
-                        // refract[8] will have not setted ( it'll just use slider value)
-                        index_of_refract_items = 8;
-                    }
-                    ImGui::PopID();
-
-                    ImGui::SameLine();
-
-					ImGui::PushID(2);
-                    ImGui::VSliderFloat(" ", ImVec2(100, 120), &chromatic_aberration, 0.0f, 1.0f,"%.3f");
-                    ImGui::PopID();
-
-
-                    ImGui::Dummy(ImVec2(10.0f, 1.0f));
-                    ImGui::PopItemWidth();
-
-                }
-
-		        ImGui::Spacing();
-				ImGui::Separator();
-
-                if (b_calcReflect && b_calcRefract)
-                {
-                    ImGui::SliderFloat("Fresnel Power", &fresnelPower, 0.1f, 10.0f);
-                }
-
-                ImGui::EndTabItem();
-            }
-
             if (ImGui::BeginTabItem("Global Constant"))
             {
                 if (ImGui::CollapsingHeader("Global"))
@@ -601,90 +474,31 @@ void OG::Scene_Assignment2::CleanupImGui()
     ImGui::DestroyContext();
 }
 
-/// <summary>
-/// Frame Buffer, Add 6 attachments for CUBE MAP
-/// </summary>
+/*
+* pFBO: G-buffer
+* 
+*/
 void OG::Scene_Assignment2::setFramebuffer()
 {
     pFBO->init(_windowWidth, _windowHeight);
+
+
     pFBO->bind();
 
-    std::unique_ptr<Texture> right = std::make_unique<Texture>(_windowWidth, _windowHeight, 2);
-    std::unique_ptr<Texture> left = std::make_unique<Texture>(_windowWidth, _windowHeight, 3);
-    std::unique_ptr<Texture> top = std::make_unique<Texture>(_windowWidth, _windowHeight, 4);
-    std::unique_ptr<Texture> bottom = std::make_unique<Texture>(_windowWidth, _windowHeight, 5);
-    std::unique_ptr<Texture> front = std::make_unique<Texture>(_windowWidth, _windowHeight, 6);
-    std::unique_ptr<Texture> back = std::make_unique<Texture>(_windowWidth, _windowHeight, 7);
+    std::unique_ptr<Texture> gbuffer_position = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, 2);
+    std::unique_ptr<Texture> gbuffer_normal = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, 3);
+    std::unique_ptr<Texture> gbuffer_material = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, 4);
 
-    pFBO->setTextureAttachment("right", right);
-    pFBO->setTextureAttachment("left", left);
-    pFBO->setTextureAttachment("top", top);
-    pFBO->setTextureAttachment("bottom", bottom);
-    pFBO->setTextureAttachment("front", front);
-    pFBO->setTextureAttachment("back", back);
+    pFBO->setTextureAttachment("gbuffer_position", gbuffer_position);
+    pFBO->setTextureAttachment("gbuffer_normal", gbuffer_normal);
+    pFBO->setTextureAttachment("gbuffer_material", gbuffer_material);
+    pFBO->setDrawBuffers();
 
     pFBO->setDepthBuffer();
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        std::cout << "Frame Buffer Not Ready" << std::endl;
-    }
-
-    pFBO->unbind();
-}
-
-void OG::Scene_Assignment2::updateFramebuffer()
-{
-    pFBO->bind();
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-
-    glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);    
-    pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
-
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4), sizeof(glm::vec3), glm::value_ptr(pCamera_->Position)); // 96 * 4 + 16, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2, sizeof(glm::vec3), glm::value_ptr(global_ambient)); // 96 + 32, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3, sizeof(glm::vec3), glm::value_ptr(fog_color)); // 96 + 48, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3), sizeof(GLfloat), &near);
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat), sizeof(GLfloat), &far);
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
-    pUBO_light->AddSubData(sizeof(Light) * 16, sizeof(glm::vec3), glm::value_ptr(att)); //96 * 4, 16
-
-    for (int i = 0; i < 6; ++i) {
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glm::mat4 view = skybox->camera_lookat[i];
-        pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
-        glDrawBuffer(GL_COLOR_ATTACHMENT0 + i);
-
-        glDepthMask(GL_FALSE);
-        skybox->Render(view, projection);
-        glDepthMask(GL_TRUE);
-
-        lightShader->Use();
-
-        GLsizei offset = 0;
-        for (int i = 0; i < num_of_lights; ++i) {
-            glm::mat4 model = glm::mat4(1.0f);
-            glm::vec3 scale = spheres_[i]->getScale();
-            glm::vec3 transform = spheres_[i]->getPosition();
-
-            model = glm::translate(transform) * glm::scale(scale);
-
-            lightShader->SetUniformMatrix4fv("model", model);
-            lightShader->SetUniform4fv("diffuse", light[i].diffuse);
-
-            light[i].position = glm::vec4(spheres_[i]->position_, 0.0f);
-            light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
-
-            OBJECT->models_[spheres_[i]->getName()]->Draw(shaders_[current_shader].get());
-            pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
-            offset += static_cast<GLsizei>(sizeof(glm::vec4) * 6);
-        }
-
-        lightShader->SetUniformMatrix4fv("model", pOrbit->model);
-        lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
-        pOrbit->DrawOrbit();
+        std::cout << "Framebuffer Not Complete" << std::endl;
     }
 
     pFBO->unbind();

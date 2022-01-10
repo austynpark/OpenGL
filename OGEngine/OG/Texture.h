@@ -37,7 +37,15 @@ namespace OG
 	{
 	public:
 		SkyboxTexture(const char* fileName, GLuint texNum);
-		~SkyboxTexture();
+		~SkyboxTexture() = default;
+	};
+
+	class GBufferTexture : public Texture
+	{
+	public:
+		GBufferTexture(int width, int height, GLuint texNum);
+		~GBufferTexture() = default;
+		
 	};
 
 }

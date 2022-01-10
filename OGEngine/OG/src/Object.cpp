@@ -96,9 +96,9 @@ namespace OG
 		name_ = name;
 	}
 
-	void Object::draw(Shader* shader)
+	void Object::draw()
 	{
-		models_[name_]->Draw(shader);
+		models_[name_]->Draw();
 	}
 
 	void Object::drawNormal(bool drawFaceNormal) {

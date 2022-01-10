@@ -16,6 +16,8 @@ namespace OG {
 		void bind() const;
 		void unbind() const;
 		void setTextureAttachment(const char* texture_name, std::unique_ptr<Texture>& texture, GLint level = 0);
+		void bind_attachments();
+		void setDrawBuffers();
 		void setDepthBuffer();
 		void cleanUp() const;
 		Texture* getAttachment(const char* texture_name);

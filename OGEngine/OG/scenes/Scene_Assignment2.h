@@ -159,17 +159,8 @@ namespace OG
 
 		// Frame Buffer Object
 		std::unique_ptr<FBO> pFBO;
-		void updateFramebuffer();
+		std::unique_ptr<Shader> gbuffer_shader;
 
-		// Reflect, Refraction Uniform Variable
-		float refraction[9];
-		float refract_index; // 1.0 ~ 100.0
-		float chromatic_aberration; // 0.00~1.00
-		int index_of_refract_items; 	
-		float fresnelPower; // 0.1 ~ 10.0
-		float mixRatio; // ratio for texture & reflection, refraction (0.0 ~ 1.0)
-		bool b_calcRefract;
-		bool b_calcReflect;
 	};
 }
 

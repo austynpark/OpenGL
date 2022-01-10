@@ -44,14 +44,36 @@ namespace OG {
 		m_attachments[texture_name] = std::move(texture);
 	}
 
+	void FBO::bind_attachments()
+	{
+		for (const auto& pair : m_attachments) {
+			pair.second->Bind();
+		}
+	}
+
+	/*
+	* OpenGL by default only renders to a framebuffer's first color attachment.
+	* Must explicitly tell OpenGL rendering multiple colorbuffers
+	*/
+	void FBO::setDrawBuffers()
+	{
+		std::vector<GLuint> texIds(m_attachments.size());
+
+		for (const auto& pair : m_attachments) {
+			texIds.push_back(pair.second->getHandler());
+		}
+
+		glDrawBuffers((GLsizei)texIds.size(), texIds.data());
+	}
+
 	void FBO::setDepthBuffer()
 	{
 		glGenRenderbuffers(1, &m_depthID);
 
 		glBindRenderbuffer(GL_RENDERBUFFER, m_depthID);
 
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_width, m_height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthID);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_width, m_height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthID);
 	}
 
 	void FBO::cleanUp() const

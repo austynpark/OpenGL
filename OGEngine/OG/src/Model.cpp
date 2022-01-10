@@ -31,7 +31,7 @@ namespace OG
 		pMesh_->SetBuffer();
 	}
 
-	void Model::Draw(Shader* shader)
+	void Model::Draw()
 	{
 		pMesh_->Draw();
 	}

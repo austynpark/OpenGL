@@ -129,6 +129,11 @@ OG::SkyboxTexture::SkyboxTexture(const char* fileName, GLuint texNum)
 	texNum_ = texNum;
 }
 
-OG::SkyboxTexture::~SkyboxTexture()
+OG::GBufferTexture::GBufferTexture(int width, int height, GLuint texNum)
 {
+	glGenTextures(1, &id_);
+	glBindTexture(GL_TEXTURE_2D, id_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }

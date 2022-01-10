@@ -183,6 +183,8 @@
     <ClInclude Include="OG\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="OG\shaders\GBuffer.frag" />
+    <None Include="OG\shaders\GBuffer.vert" />
     <None Include="OG\shaders\BlinnPhong.frag" />
     <None Include="OG\shaders\PhongLighting.frag" />
     <None Include="OG\shaders\PhongLighting.vert" />

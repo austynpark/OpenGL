@@ -51,7 +51,7 @@ namespace OG
         void setScale(const glm::vec3& s);
         void setColor(const glm::vec3& col);
         void setName(const char* name);
-        void draw(Shader* shader);
+        void draw();
         void drawNormal(bool drawFaceNormal);
 
 		static std::unordered_map<std::string, std::unique_ptr<Model>> models_;

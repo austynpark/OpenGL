@@ -139,7 +139,7 @@ int OG::Scene_Assignment1::Render(double dt)
         shader->SetUniform3fv("objectColor", color);
 
         if (models_.find(sphere->getName()) != models_.end())
-            models_[sphere->getName()]->Draw(shader.get());
+            models_[sphere->getName()]->Draw();
     }
 
     for (const auto& obj : objects_)
@@ -164,7 +164,7 @@ int OG::Scene_Assignment1::Render(double dt)
                 obj->drawNormal(drawFaceNormal);
             }
 
-            obj->draw(shader.get());
+            obj->draw();
         }
     }
 
