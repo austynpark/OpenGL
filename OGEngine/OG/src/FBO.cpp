@@ -51,21 +51,6 @@ namespace OG {
 		}
 	}
 
-	/*
-	* OpenGL by default only renders to a framebuffer's first color attachment.
-	* Must explicitly tell OpenGL rendering multiple colorbuffers
-	*/
-	void FBO::setDrawBuffers()
-	{
-		std::vector<GLuint> texIds(m_attachments.size());
-
-		for (const auto& pair : m_attachments) {
-			texIds.push_back(pair.second->getHandler());
-		}
-
-		glDrawBuffers((GLsizei)texIds.size(), texIds.data());
-	}
-
 	void FBO::setDepthBuffer()
 	{
 		glGenRenderbuffers(1, &m_depthID);

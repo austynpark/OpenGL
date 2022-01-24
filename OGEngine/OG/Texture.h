@@ -43,7 +43,7 @@ namespace OG
 	class GBufferTexture : public Texture
 	{
 	public:
-		GBufferTexture(int width, int height, GLuint texNum);
+		GBufferTexture(int width, int height, GLenum texture_format, GLuint texNum);
 		~GBufferTexture() = default;
 		
 	};

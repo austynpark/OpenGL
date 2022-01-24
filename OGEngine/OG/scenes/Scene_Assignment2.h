@@ -15,6 +15,7 @@ End Header --------------------------------------------------------*/
 
 namespace OG 
 {
+	class Model;
 	class Camera;
 	class Object;
 	class UniformBuffer;
@@ -111,9 +112,8 @@ namespace OG
 		//std::unique_ptr<Shader> PhongShading;
 
 		std::unordered_map<std::string, std::unique_ptr<Shader>> shaders_;
-		
+
 		const char* current_shader = nullptr;
-		std::unique_ptr<Shader> lightShader;
 
 		// Light Info
 		Light light[16];
@@ -154,12 +154,12 @@ namespace OG
 		bool bCalcOnCPU;
 		std::unique_ptr<Texture> pVisualizeTexture;
 
-		// Cube Map
-		std::unique_ptr<CubeMap> skybox;
-
 		// Frame Buffer Object
 		std::unique_ptr<FBO> pFBO;
 		std::unique_ptr<Shader> gbuffer_shader;
+		std::unique_ptr<Shader> deferred_shader;
+
+		//GLuint gBuffer, gPosition, gNormal, gMaterial, gDepth;
 
 	};
 }

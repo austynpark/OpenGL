@@ -6,7 +6,7 @@ layout (location = 2) in vec3 vNormal;
 out VS_OUT
 {
 	vec3 fragPos;
-	vec2 TexCoords;
+	vec2 texCoords;
 	vec3 fragNormal;
 } vs_out;
 
@@ -16,14 +16,14 @@ layout(std140) uniform Transforms
 	mat4 projection;
 };
 
-uniform mat4 normalMatrix;
+uniform mat3 normalMatrix;
 uniform mat4 model;
 
 void main() 
 {
-	vs_out.fragNormal = (normalMatrix * vec4(vNormal, 0.0)).xyz; 
+	vs_out.fragNormal = normalMatrix * vNormal; 
 	vs_out.fragPos = (view * model * vec4(vPos, 1.0)).xyz;
-	vs_out.TexCoords = vUV;
+	vs_out.texCoords = vUV;
 
 	gl_Position = projection * vec4(vs_out.fragPos, 1.0);
 }

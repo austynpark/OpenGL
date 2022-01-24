@@ -217,34 +217,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="OG\shaders\CubeMap.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\BlinnPhong.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\PhongLighting.frag">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\PhongLighting.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
     <None Include="OG\shaders\PhongShading.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="OG\shaders\PhongShading.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\CubeMap.frag">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\PKO.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\PKO.frag">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="OG\shaders\BlinnPhong.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="OG\shaders\GBuffer.vert">
@@ -253,5 +229,7 @@
     <None Include="OG\shaders\GBuffer.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="OG\shaders\DeferredShading.frag" />
+    <None Include="OG\shaders\DeferredShading.vert" />
   </ItemGroup>
 </Project>

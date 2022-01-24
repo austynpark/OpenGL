@@ -32,6 +32,7 @@ namespace OG {
 
 		// Attachment (Texture) Name, texture Handler
 		std::unordered_map<std::string, std::unique_ptr<Texture>> m_attachments;
+
 	};
 }
 

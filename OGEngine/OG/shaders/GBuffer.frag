@@ -2,7 +2,7 @@
 layout (location = 0) out vec3 gPosition;
 layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec4 gMaterial;
-layout (location = 3) out vec3 gDepth;
+layout (location = 3) out vec3 gDepthValue;
 
 in VS_OUT {
 	vec3 fragPos;
@@ -63,12 +63,17 @@ void main() {
             texCoords = fs_in.texCoords;
     }
 
-	gMaterial.rgb = texture(diffuse_texture, texCoords).rgb + I_emissive;
-    gMaterial.a = texture(specular_texture, texCoords).r;
+    if(uvType != 4) {
+        gMaterial.rgb = I_emissive + texture(diffuse_texture, texCoords).rgb;
+        gMaterial.a = texture(specular_texture, texCoords).r;
+    } else {
+        gMaterial = vec4(1.0f);
+    }
+
 
 	gPosition = fs_in.fragPos;
 	gNormal = normalize(fs_in.fragNormal);
-    gDepth = vec3(length(fs_in.fragPos));
+    gDepthValue = vec3(length(fs_in.fragPos));
 }
 
 vec2 CalcCubeMap(vec3 vEntity)

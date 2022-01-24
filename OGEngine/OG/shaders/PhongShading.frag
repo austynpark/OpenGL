@@ -36,13 +36,7 @@ layout(std140) uniform LightInfo
     int numOfLights;
 };
 
-uniform sampler2D diffuse_texture;
-uniform sampler2D specular_texture;
-uniform int uvType;
-uniform float zMin;
-uniform float zMax;
 uniform bool isNormMapping;
-uniform vec3 I_emissive;
 
 vec3 CalcDirLight(Light light, vec3 norm, vec3 viewDir, vec2 texCoords) 
 {

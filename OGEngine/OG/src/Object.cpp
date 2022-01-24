@@ -15,6 +15,7 @@ End Header --------------------------------------------------------*/
 namespace OG 
 {
 	Object* OBJECT = nullptr;
+
 	std::unordered_map<std::string, std::unique_ptr<Model>> Object::models_;
 
 	Object::Object(const std::string& fileName)

@@ -92,6 +92,7 @@ namespace OG
         void MapVertexBuffer();
 
         static Mesh* CreateSphere(float radius, int sectorCount, int stackCount);
+        static void renderFullScreenQuad();
 
         // Model vertex maximum, minimum value
         glm::vec3               boundingBox[2];

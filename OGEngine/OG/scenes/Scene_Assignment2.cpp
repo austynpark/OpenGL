@@ -23,14 +23,13 @@ End Header --------------------------------------------------------*/
 #include "CubeMap.h"
 
 OG::Scene_Assignment2::Scene_Assignment2(int windowWidth, int windowHeight) : Scene(windowWidth, windowHeight),
-shaders_(), lightShader(std::make_unique<Shader>("light_object.vert", "light_object.frag")),
+shaders_(),
 pCamera_(std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 10.0f))),
 pDiffuseTexture(std::make_unique<Texture>("metal_roof_diff_512x512.png", 0)), 
 pSpecularTexture(std::make_unique<Texture>("metal_roof_spec_512x512.png", 1)),
 pVisualizeTexture(std::make_unique<Texture>("visualize.png", 0)),
 pOrbit(std::make_unique<Orbit>(2.5f, 300)),
-pFBO(std::make_unique<FBO>()),
-skybox(std::make_unique<CubeMap>())
+pFBO(std::make_unique<FBO>())
 {
     num_of_lights = 1;
     isRotating = true;
@@ -48,43 +47,35 @@ int OG::Scene_Assignment2::Init()
 {
     // create gbuffer graphics pipeline
     gbuffer_shader = std::make_unique<Shader>("GBuffer.vert", "GBuffer.frag");
-
-    shaders_["PhongShading"] = std::make_unique<Shader>("PhongShading.vert", "PhongShading.frag");
-
-#if 0
-    shaders_["PhongLighting"] = std::make_unique<Shader>("PhongLighting.vert", "PhongLighting.frag");
-    shaders_["BlinnPhong"] = std::make_unique<Shader>("BlinnPhong.vert", "BlinnPhong.frag");
-#endif
+    deferred_shader = std::make_unique<Shader>("DeferredShading.vert", "DeferredShading.frag");
     
-    current_shader = "PhongShading";
-    
-    shaders_[current_shader]->Use();
+    current_shader = "gbuffer_shader";
 
 	//Initialize Uniform Buffer Block
     SetupBuffers();
     pOrbit->SetupBuffer();
 
-    current_item = "simpleSphere";
+    current_item = "cube";
 
     objects_.emplace_back(std::move(
         OBJECT->CreateObject(current_item, glm::vec3(0.0f), glm::vec3(1.0f))
     ));
     
     OBJECT->models_["cube"] = std::make_unique<Model>("OG/models/cube.obj");
+	OBJECT->models_["quad"] = std::make_unique<Model>("OG/models/quad.obj");
     OBJECT->models_["4Sphere"] = std::make_unique<Model>("OG/models/4Sphere.obj");
     OBJECT->models_["bunny_high_poly"] = std::make_unique<Model>("OG/models/bunny_high_poly.obj");
     OBJECT->models_["simpleSphere"] = std::make_unique<Model>("OG/models/simpleSphere.obj");
     OBJECT->models_["sphere_mesh"] = std::make_unique<Model>(Mesh::CreateSphere(0.1f, 36, 18));
 #if 0
-    OBJECT->models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
-    OBJECT->models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
-    OBJECT->models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
-    OBJECT->models_["lucy_princeton"] = std::make_unique<Model>("OG/models/lucy_princeton.obj");
-    OBJECT->models_["quad"] = std::make_unique<Model>("OG/models/quad.obj");
-    OBJECT->models_["sphere_modified"] = std::make_unique<Model>("OG/models/sphere_modified.obj");
-    OBJECT->models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
-    OBJECT->models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
-    OBJECT->models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
+    models_["bunny"] = std::make_unique<Model>("OG/models/bunny.obj");
+    models_["cup"] = std::make_unique<Model>("OG/models/cup.obj");
+    models_["sphere"] = std::make_unique<Model>("OG/models/sphere.obj");
+    models_["lucy_princeton"] = std::make_unique<Model>("OG/models/lucy_princeton.obj");
+    models_["sphere_modified"] = std::make_unique<Model>("OG/models/sphere_modified.obj");
+    models_["starwars1"] = std::make_unique<Model>("OG/models/starwars1.obj");
+    models_["triangle"] = std::make_unique<Model>("OG/models/triangle.obj");
+    models_["rhino"] = std::make_unique<Model>("OG/models/rhino.obj");
 #endif
 
     for (int i = 0; i < 16; ++i)
@@ -94,13 +85,12 @@ int OG::Scene_Assignment2::Init()
         ));
     }
     
-    const char* faces[] = { "skybox/right.png",
-        "skybox/left.png", "skybox/top.png", "skybox/bottom.png", "skybox/front.png", "skybox/back.png"
-    };
-
-    skybox->Init(faces, 2);
-
     setFramebuffer();
+
+    deferred_shader->SetUniform1i("gbuffer_position", 0);
+    deferred_shader->SetUniform1i("gbuffer_normal", 1);
+    deferred_shader->SetUniform1i("gbuffer_material", 2);
+    deferred_shader->SetUniform1i("gbuffer_depth", 3);
 
     return 0;
 }
@@ -133,31 +123,13 @@ int OG::Scene_Assignment2::Render(double dt)
 
     glm::mat4 view = pCamera_->GetViewMatrix();
     glm::mat4 projection = pCamera_->GetProjMatrix((float)_windowWidth, (float)_windowHeight);
-
-    shaders_[current_shader]->Use();
-
-    lightShader->SetUniformBlock("Transforms", 0U);
-
-    gbuffer_shader->SetUniformBlock("Transforms", 0U);
-    shaders_[current_shader]->SetUniformBlock("LightInfo", 1U);
-
-    // By converting view matrix 4x4 to 3x3, remove translation section
-    glm::mat4 view_without_translation = glm::mat4(glm::mat3(pCamera_->GetViewMatrix()));
    
-    //glDepthFunc(GL_LEQUAL);
-    glDepthMask(GL_FALSE);
-    skybox->Render(view_without_translation, projection);
-    //glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE);
-
-    //updateFramebuffer();
-
 	pUBO_transform->AddSubData(0, sizeof(glm::mat4), glm::value_ptr(view));
     pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
 
     render_deferred_objects();
     
-    render_debug_objects();
+    //render_debug_objects();
 
     return 0;
 }
@@ -173,15 +145,15 @@ int OG::Scene_Assignment2::postRender(double dt)
 void OG::Scene_Assignment2::render_deferred_objects()
 {
 	pFBO->bind();
-    //pFBO->bind_attachments();
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 
     gbuffer_shader->Use();
 	gbuffer_shader->SetUniform1i("diffuse_texture", pDiffuseTexture->texNum_);
     gbuffer_shader->SetUniform1i("specular_texture", pSpecularTexture->texNum_);
+    gbuffer_shader->SetUniformBlock("Transforms", 0U);
 
     if (!bVisualizeTex)
         pDiffuseTexture->Bind();
@@ -209,27 +181,49 @@ void OG::Scene_Assignment2::render_deferred_objects()
 
         pOrbit->model = model;
 
-        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
-        gbuffer_shader->SetUniformMatrix4fv("normalMatrix", normalMatrix);
+        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(pCamera_->GetViewMatrix() * model)));
+        gbuffer_shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
 
         gbuffer_shader->SetUniformMatrix4fv("model", model);
         gbuffer_shader->SetUniform3fv("I_emissive", obj->color_);
+        gbuffer_shader->SetUniform1b("isNormMapping", OBJECT->models_[current_item]->isNormMapping);
 
         if (OBJECT->models_.find(obj->getName()) != OBJECT->models_.end())
         {
             obj->draw();
         }
     }
-}
 
-/*
-* Debug objects refer orbit, ray, vertex normal, face normal...
-*/
-void OG::Scene_Assignment2::render_debug_objects()
-{
-    lightShader->Use();
+    //TODO: should i render this into g-buffer?
+#if 0 
+    for (int i = 0; i < num_of_lights; ++i) {
 
-    GLsizei offset = 0;
+        glm::vec3 scale = spheres_[i]->getScale();
+        glm::vec3 transform = spheres_[i]->getPosition();
+
+        glm::mat4 model = glm::translate(transform)* glm::scale(scale);
+        
+        //NOTE: i don't need normal matrix for the lights but if glsl will complain
+        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(pCamera_->GetViewMatrix() * model)));
+        gbuffer_shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
+
+        gbuffer_shader->SetUniformMatrix4fv("model", model);
+    }
+#endif
+
+    pFBO->unbind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    deferred_shader->Use();
+
+	pFBO->getAttachment("gbuffer_position")->Bind();
+    pFBO->getAttachment("gbuffer_normal")->Bind();
+    pFBO->getAttachment("gbuffer_material")->Bind();
+    pFBO->getAttachment("gbuffer_depth")->Bind();
+
+    Mesh::renderFullScreenQuad();
+
+	GLsizei offset = 0;
     for (int i = 0; i < num_of_lights; ++i)
     {
         glm::mat4 model = glm::mat4(1.0f);
@@ -238,35 +232,45 @@ void OG::Scene_Assignment2::render_debug_objects()
 
         model = glm::translate(transform) * glm::scale(scale);
 
-        lightShader->SetUniformMatrix4fv("model", model);
-        lightShader->SetUniform4fv("diffuse", light[i].diffuse);
+        //lightShader->SetUniformMatrix4fv("model", model);
+        //lightShader->SetUniform4fv("diffuse", light[i].diffuse);
 
-        light[i].position = glm::vec4(spheres_[i]->position_, 0.0f);
-        light[i].direction = glm::vec4(objects_[0]->position_, 1.0f) - light[i].position;
+		light[i].direction = pCamera_->GetViewMatrix() * model * (glm::vec4(objects_[0]->position_, 1.0f) - light[i].position);
+        light[i].position = pCamera_->GetViewMatrix() * model * glm::vec4(spheres_[i]->position_, 0.0f);
 
 
-        OBJECT->models_[spheres_[i]->getName()]->Draw();
+        //OBJECT->models_[spheres_[i]->getName()]->Draw();
         /************************************* ADD LIGHT UNIFORM BUFFER DATA ****************************************************************************/
         pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
         offset += static_cast<GLsizei>(sizeof(glm::vec4) * 6);
     }
 
     pUBO_light->AddSubData(sizeof(Light) * 16, sizeof(glm::vec3), glm::value_ptr(att)); //96 * 4, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4), sizeof(glm::vec3), glm::value_ptr(pCamera_->Position)); // 96 * 4 + 16, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2, sizeof(glm::vec3), glm::value_ptr(global_ambient)); // 96 + 32, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3, sizeof(glm::vec3), glm::value_ptr(fog_color)); // 96 + 48, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3), sizeof(GLfloat), &near);
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat), sizeof(GLfloat), &far);
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 3 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4), sizeof(glm::vec3), glm::value_ptr(global_ambient)); // 96 + 32, 16
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2, sizeof(glm::vec3), glm::value_ptr(fog_color)); // 96 + 48, 16
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2 + sizeof(glm::vec3), sizeof(GLfloat), &near);
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2 + sizeof(glm::vec3) + sizeof(GLfloat), sizeof(GLfloat), &far);
+    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
     /*************************************************************************************************************************************************/
+
+
+    pFBO->unbind();
+}
+
+/*
+* Debug objects refer orbit, ray, vertex normal, face normal...
+*/
+void OG::Scene_Assignment2::render_debug_objects()
+{
+    //lightShader->Use();
 
     if (pOrbit->radius != pOrbit->prev_radius) {
         pOrbit->prev_radius = pOrbit->radius;
         pOrbit->SetupBuffer();
     }
 
-    lightShader->SetUniformMatrix4fv("model", pOrbit->model);
-    lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
+    //lightShader->SetUniformMatrix4fv("model", pOrbit->model);
+    //lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
     pOrbit->DrawOrbit();
 
     for (const auto& obj : objects_) {
@@ -302,7 +306,7 @@ void OG::Scene_Assignment2::SetupBuffers()
 {
    // Generate UNIFORM_BUFFER, and Set 'binding point' as an 'index'
     pUBO_transform = std::make_unique<UniformBuffer>(static_cast<GLsizei>(2 * sizeof(glm::mat4)), 0U, GL_DYNAMIC_DRAW);
-    pUBO_light = std::make_unique<UniformBuffer>(static_cast<GLsizei>((sizeof(glm::vec4) * 101)), 1U, GL_DYNAMIC_DRAW);
+    pUBO_light = std::make_unique<UniformBuffer>(static_cast<GLsizei>((sizeof(glm::vec4) * 100)), 1U, GL_DYNAMIC_DRAW);
 
 }
 
@@ -386,10 +390,42 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
 
                 ImGui::Spacing();
 
+                //NOT USING shaders_ for now
+#if 0
                 if (ImGui::Button("Reload Shader"))
                 {
                     shaders_[current_shader]->ReloadShaders();
                 }
+#endif
+
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Material"))
+            {
+                ImGui::ColorEdit3("Emissive", glm::value_ptr(objects_[0]->color_));
+
+                ImGui::Separator();
+
+                ImGui::Checkbox("Visualize UV", &bVisualizeTex);
+
+                ImGui::Combo("Texture Entity", (int*)&OBJECT->models_[current_item]->isNormMapping, "POSITION\0NORMAL\0\0");
+                ImGui::Combo("Projection Mode", (int*)&OBJECT->models_[current_item]->uvType, "PLANAR\0CYLINDRICAL\0SPHERICAL\0NONE\0\0");
+
+                ImGui::Spacing();
+
+                if (bCalcOnCPU)
+                {
+                    if (ImGui::Button("Calculate UV"))
+                    {
+                        OBJECT->models_[current_item]->RemapUV();
+                    }
+                }
+
+                ImGui::Spacing();
+
+                if (ImGui::RadioButton("calculate on CPU", bCalcOnCPU == true)) { bCalcOnCPU = true; } ImGui::SameLine();
+                if (ImGui::RadioButton("calculate on GPU", bCalcOnCPU == false)) { bCalcOnCPU = false; }
 
                 ImGui::EndTabItem();
             }
@@ -485,14 +521,29 @@ void OG::Scene_Assignment2::setFramebuffer()
 
     pFBO->bind();
 
-    std::unique_ptr<Texture> gbuffer_position = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, 2);
-    std::unique_ptr<Texture> gbuffer_normal = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, 3);
-    std::unique_ptr<Texture> gbuffer_material = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, 4);
+    std::unique_ptr<Texture> gbuffer_position = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 0);
+    std::unique_ptr<Texture> gbuffer_normal = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 1);
+    std::unique_ptr<Texture> gbuffer_material = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 2);
+    std::unique_ptr<Texture> gbuffer_depth = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 3);
 
     pFBO->setTextureAttachment("gbuffer_position", gbuffer_position);
     pFBO->setTextureAttachment("gbuffer_normal", gbuffer_normal);
     pFBO->setTextureAttachment("gbuffer_material", gbuffer_material);
-    pFBO->setDrawBuffers();
+    pFBO->setTextureAttachment("gbuffer_depth", gbuffer_depth);
+
+	/*
+	* OpenGL by default only renders to a framebuffer's first color attachment.
+	* Must explicitly tell OpenGL rendering multiple colorbuffers
+	*/
+
+    GLuint attachments[] = {
+        GL_COLOR_ATTACHMENT0,
+        GL_COLOR_ATTACHMENT1,
+        GL_COLOR_ATTACHMENT2,
+        GL_COLOR_ATTACHMENT3
+    };
+
+    glDrawBuffers(static_cast<int>(sizeof(attachments) / sizeof(GLuint)), attachments);
 
     pFBO->setDepthBuffer();
 
