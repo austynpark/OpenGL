@@ -19,6 +19,9 @@ namespace OG {
 		void bind_attachments();
 		void setDrawBuffers();
 		void setDepthBuffer();
+		void copyDepthBuffer();
+
+
 		void cleanUp() const;
 		Texture* getAttachment(const char* texture_name);
 
