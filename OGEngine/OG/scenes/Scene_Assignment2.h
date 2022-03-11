@@ -35,15 +35,16 @@ namespace OG
 
 	struct Light
 	{
-		GLfloat cutOff = 12.5f;
-		GLfloat outerCutOff = 17.5f;
-		GLfloat fallOut = 1.0f;
-		GLint type = E_POINT;
 		glm::vec4 ambient{ 1.0f, 1.0f, 1.0f, 0.0f};
 		glm::vec4 diffuse{ 1.0f, 1.0f, 1.0f, 0.0f};
 		glm::vec4 specular{ 1.0f, 1.0f, 1.0f, 0.0f};
 		glm::vec4 position{ 0.0f,0.0f,0.0f, 1.0f};
 		glm::vec4 direction{ 0.0f, 0.0f, 0.0f, 0.0f};
+		GLfloat cutOff = 12.5f;
+		GLfloat outerCutOff = 17.5f;
+		GLfloat fallOut = 1.0f;
+		GLint type = E_POINT;
+
 	};
 
 	struct Orbit
@@ -66,6 +67,7 @@ namespace OG
 		float radius;
 		int numberOfPoints;
 		float prev_radius;
+		bool orbit_enabled;
 
 		glm::mat4 model;
 		glm::vec4 diffuse;
@@ -108,24 +110,25 @@ namespace OG
 		void DrawImGui(GLFWwindow* pWindow) override;
 		void CleanupImGui() override;
 
-		//std::unique_ptr<Shader> PhongLighting;
-		//std::unique_ptr<Shader> PhongShading;
-
 		std::unordered_map<std::string, std::unique_ptr<Shader>> shaders_;
 
 		const char* current_shader = nullptr;
+
+		std::unique_ptr<Object> plane;
 
 		// Light Info
 		Light light[16];
 
 		std::unique_ptr<Camera> pCamera_;
-
 		std::vector<std::unique_ptr<Object>> objects_;
+
 		// Draw Normal
 		bool is_normal_vector_on;
 		bool drawFaceNormal;
 
 		const char* current_item = nullptr;
+
+		std::unique_ptr<Shader> light_shader;
 
 		/* Functions & Variables for Orbit */
 		std::vector<std::unique_ptr<Object>> spheres_;
@@ -145,8 +148,8 @@ namespace OG
 		float near = 0.1f;
 		float far = 20.0f;
 		int num_of_lights;
-		//////////////////////////////
 
+		//////////////////////////////
 		std::unique_ptr<Texture> pDiffuseTexture;
 		std::unique_ptr<Texture> pSpecularTexture;
 
@@ -159,8 +162,7 @@ namespace OG
 		std::unique_ptr<Shader> gbuffer_shader;
 		std::unique_ptr<Shader> deferred_shader;
 
-		//GLuint gBuffer, gPosition, gNormal, gMaterial, gDepth;
-
+		bool bCopyDepth;
 	};
 }
 

@@ -29,14 +29,16 @@ pDiffuseTexture(std::make_unique<Texture>("metal_roof_diff_512x512.png", 0)),
 pSpecularTexture(std::make_unique<Texture>("metal_roof_spec_512x512.png", 1)),
 pVisualizeTexture(std::make_unique<Texture>("visualize.png", 0)),
 pOrbit(std::make_unique<Orbit>(2.5f, 300)),
-pFBO(std::make_unique<FBO>())
+pFBO(std::make_unique<FBO>()),
+plane(std::move(OBJECT->CreateObject("quad", glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(15.0f), glm::vec3(1.0f, 0.0f, 0.0f), -90.0f)))
 {
     num_of_lights = 1;
     isRotating = true;
     bVisualizeTex = false;
     is_normal_vector_on = false;
     drawFaceNormal = false;
-    bCalcOnCPU = false;
+    bCalcOnCPU = true;
+    bCopyDepth = true;
 }
 
 OG::Scene_Assignment2::~Scene_Assignment2()
@@ -48,6 +50,7 @@ int OG::Scene_Assignment2::Init()
     // create gbuffer graphics pipeline
     gbuffer_shader = std::make_unique<Shader>("GBuffer.vert", "GBuffer.frag");
     deferred_shader = std::make_unique<Shader>("DeferredShading.vert", "DeferredShading.frag");
+    light_shader = std::make_unique<Shader>("light_object.vert", "light_object.frag");
     
     current_shader = "gbuffer_shader";
 
@@ -86,12 +89,6 @@ int OG::Scene_Assignment2::Init()
     }
     
     setFramebuffer();
-
-    deferred_shader->SetUniform1i("gbuffer_position", 0);
-    deferred_shader->SetUniform1i("gbuffer_normal", 1);
-    deferred_shader->SetUniform1i("gbuffer_material", 2);
-    deferred_shader->SetUniform1i("gbuffer_depth", 3);
-
     return 0;
 }
 
@@ -101,8 +98,6 @@ void OG::Scene_Assignment2::CleanUp()
 
 int OG::Scene_Assignment2::preRender(double dt)
 {
-	glClearColor(fog_color.x, fog_color.y, fog_color.z, 1.0f);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -120,7 +115,6 @@ int OG::Scene_Assignment2::preRender(double dt)
 
 int OG::Scene_Assignment2::Render(double dt)
 {
-
     glm::mat4 view = pCamera_->GetViewMatrix();
     glm::mat4 projection = pCamera_->GetProjMatrix((float)_windowWidth, (float)_windowHeight);
    
@@ -128,8 +122,7 @@ int OG::Scene_Assignment2::Render(double dt)
     pUBO_transform->AddSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
 
     render_deferred_objects();
-    
-    //render_debug_objects();
+    render_debug_objects();
 
     return 0;
 }
@@ -154,6 +147,8 @@ void OG::Scene_Assignment2::render_deferred_objects()
 	gbuffer_shader->SetUniform1i("diffuse_texture", pDiffuseTexture->texNum_);
     gbuffer_shader->SetUniform1i("specular_texture", pSpecularTexture->texNum_);
     gbuffer_shader->SetUniformBlock("Transforms", 0U);
+
+    pUBO_transform->Bind();
 
     if (!bVisualizeTex)
         pDiffuseTexture->Bind();
@@ -181,8 +176,8 @@ void OG::Scene_Assignment2::render_deferred_objects()
 
         pOrbit->model = model;
 
-        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(pCamera_->GetViewMatrix() * model)));
-        gbuffer_shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
+        glm::mat4 normalMatrix = glm::transpose(glm::inverse(pCamera_->GetViewMatrix() * model));
+        gbuffer_shader->SetUniformMatrix4fv("normalMatrix", normalMatrix);
 
         gbuffer_shader->SetUniformMatrix4fv("model", model);
         gbuffer_shader->SetUniform3fv("I_emissive", obj->color_);
@@ -194,34 +189,41 @@ void OG::Scene_Assignment2::render_deferred_objects()
         }
     }
 
-    //TODO: should i render this into g-buffer?
-#if 0 
-    for (int i = 0; i < num_of_lights; ++i) {
 
-        glm::vec3 scale = spheres_[i]->getScale();
-        glm::vec3 transform = spheres_[i]->getPosition();
+    if (plane) {
 
-        glm::mat4 model = glm::translate(transform)* glm::scale(scale);
-        
-        //NOTE: i don't need normal matrix for the lights but if glsl will complain
-        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(pCamera_->GetViewMatrix() * model)));
+        glm::vec3 scale = plane->getScale();
+        glm::vec3 transform = plane->getPosition();
+        glm::mat4 model = glm::translate(transform) * glm::rotate(glm::radians(-90.0f), plane->rotation_axis_) * glm::scale(scale);
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(pCamera_->GetViewMatrix() * model));
+
         gbuffer_shader->SetUniformMatrix3fv("normalMatrix", normalMatrix);
 
         gbuffer_shader->SetUniformMatrix4fv("model", model);
+        gbuffer_shader->SetUniform3fv("I_emissive", plane->color_);
+
+        pDiffuseTexture->UnBind();
+        pSpecularTexture->UnBind();
+
+        plane->draw();
     }
-#endif
+    
 
     pFBO->unbind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//glClearColor(fog_color.x, fog_color.y, fog_color.z, 1.0f);
+
     deferred_shader->Use();
 
-	pFBO->getAttachment("gbuffer_position")->Bind();
-    pFBO->getAttachment("gbuffer_normal")->Bind();
-    pFBO->getAttachment("gbuffer_material")->Bind();
-    pFBO->getAttachment("gbuffer_depth")->Bind();
+    pUBO_light->Bind();
 
-    Mesh::renderFullScreenQuad();
+    deferred_shader->SetUniform1i("gbuffer_position", 0);
+    deferred_shader->SetUniform1i("gbuffer_normal", 1);
+    deferred_shader->SetUniform1i("gbuffer_diffuse", 2);
+    deferred_shader->SetUniform1i("gbuffer_specular", 3);
+
+    pFBO->bind_attachments();
 
 	GLsizei offset = 0;
     for (int i = 0; i < num_of_lights; ++i)
@@ -235,24 +237,27 @@ void OG::Scene_Assignment2::render_deferred_objects()
         //lightShader->SetUniformMatrix4fv("model", model);
         //lightShader->SetUniform4fv("diffuse", light[i].diffuse);
 
-		light[i].direction = pCamera_->GetViewMatrix() * model * (glm::vec4(objects_[0]->position_, 1.0f) - light[i].position);
-        light[i].position = pCamera_->GetViewMatrix() * model * glm::vec4(spheres_[i]->position_, 0.0f);
+		light[i].direction = normalize(pCamera_->GetViewMatrix() * model * (glm::vec4(objects_[0]->position_, 0.0f) - light[i].position));
+        light[i].position = pCamera_->GetViewMatrix() * model * glm::vec4(spheres_[i]->position_, 1.0f);
 
 
         //OBJECT->models_[spheres_[i]->getName()]->Draw();
         /************************************* ADD LIGHT UNIFORM BUFFER DATA ****************************************************************************/
-        pUBO_light->AddSubData(offset, static_cast<GLsizei>(sizeof(glm::vec4) * 6), &light[i]);
-        offset += static_cast<GLsizei>(sizeof(glm::vec4) * 6);
     }
 
-    pUBO_light->AddSubData(sizeof(Light) * 16, sizeof(glm::vec3), glm::value_ptr(att)); //96 * 4, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4), sizeof(glm::vec3), glm::value_ptr(global_ambient)); // 96 + 32, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2, sizeof(glm::vec3), glm::value_ptr(fog_color)); // 96 + 48, 16
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2 + sizeof(glm::vec3), sizeof(GLfloat), &near);
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2 + sizeof(glm::vec3) + sizeof(GLfloat), sizeof(GLfloat), &far);
-    pUBO_light->AddSubData(sizeof(Light) * 16 + sizeof(glm::vec4) * 2 + sizeof(glm::vec3) + sizeof(GLfloat) * 2, sizeof(GLfloat), &num_of_lights);
+    pUBO_light->AddData(static_cast<GLsizei>(sizeof(Light)) * 16, light);
+    deferred_shader->SetUniform3fv("att", att);
+    deferred_shader->SetUniform3fv("global_ambient", global_ambient);
+    deferred_shader->SetUniform3fv("fog_color", fog_color);
+    deferred_shader->SetUniform1f("near", near);
+    deferred_shader->SetUniform1f("far", far);
+    deferred_shader->SetUniform1i("numOfLights", num_of_lights);
     /*************************************************************************************************************************************************/
 
+	Mesh::renderFullScreenQuad();
+
+    if (bCopyDepth)
+        pFBO->copyDepthBuffer();
 
     pFBO->unbind();
 }
@@ -262,22 +267,43 @@ void OG::Scene_Assignment2::render_deferred_objects()
 */
 void OG::Scene_Assignment2::render_debug_objects()
 {
-    //lightShader->Use();
+    light_shader->Use();
 
     if (pOrbit->radius != pOrbit->prev_radius) {
         pOrbit->prev_radius = pOrbit->radius;
         pOrbit->SetupBuffer();
     }
 
-    //lightShader->SetUniformMatrix4fv("model", pOrbit->model);
-    //lightShader->SetUniform4fv("diffuse", glm::vec4(1.0f));
-    pOrbit->DrawOrbit();
+    pUBO_transform->Bind();
+
+
+    light_shader->SetUniformMatrix4fv("model", pOrbit->model);
+
+    glm::vec3 normal_diffuse(1.0f);
+
+    light_shader->SetUniform3fv("diffuse", normal_diffuse);
+
+
+    if (pOrbit->orbit_enabled)
+        pOrbit->DrawOrbit();
 
     for (const auto& obj : objects_) {
         if (is_normal_vector_on)
             obj->drawNormal(drawFaceNormal);
     }
 
+    for (int i = 0; i < num_of_lights; ++i) {
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::vec3 scale = spheres_[i]->getScale();
+        glm::vec3 transform = spheres_[i]->getPosition();
+
+        model = glm::translate(transform) * glm::scale(scale);
+
+        light_shader->SetUniformMatrix4fv("model", model);
+        light_shader->SetUniform3fv("diffuse", light[i].diffuse);
+
+        OBJECT->models_[spheres_[i]->getName()]->Draw();
+    }
 }
 
 void OG::Scene_Assignment2::keyboardInput(GLFWwindow* pWindow, float dt)
@@ -304,9 +330,12 @@ void OG::Scene_Assignment2::keyboardInput(GLFWwindow* pWindow, float dt)
 
 void OG::Scene_Assignment2::SetupBuffers()
 {
+    gbuffer_shader->SetUniformBlock("Transforms", 0);
+    deferred_shader->SetUniformBlock("LightInfo", 1);
+
    // Generate UNIFORM_BUFFER, and Set 'binding point' as an 'index'
     pUBO_transform = std::make_unique<UniformBuffer>(static_cast<GLsizei>(2 * sizeof(glm::mat4)), 0U, GL_DYNAMIC_DRAW);
-    pUBO_light = std::make_unique<UniformBuffer>(static_cast<GLsizei>((sizeof(glm::vec4) * 100)), 1U, GL_DYNAMIC_DRAW);
+    pUBO_light = std::make_unique<UniformBuffer>(static_cast<GLsizei>((sizeof(GLfloat) * 4 * 6 * 16)), 1U, GL_DYNAMIC_DRAW);
 
 }
 
@@ -401,6 +430,26 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
                 ImGui::EndTabItem();
             }
 
+            if (ImGui::BeginTabItem("Frame Buffer"))
+            {
+
+                ImVec2 wsize = ImGui::GetWindowSize();
+               
+                ImGui::Image((ImTextureID)(uintptr_t)pFBO->getAttachment("gbuffer_position")->getHandler(), ImVec2((float)_windowWidth / 6, (float)_windowHeight / 6), ImVec2(0, 1), ImVec2(1, 0));
+				ImGui::SameLine();
+                ImGui::Image((ImTextureID)(uintptr_t)pFBO->getAttachment("gbuffer_normal")->getHandler(), ImVec2((float)_windowWidth / 6, (float)_windowHeight / 6), ImVec2(0, 1), ImVec2(1, 0));
+
+                ImGui::Image((ImTextureID)(uintptr_t)pFBO->getAttachment("gbuffer_diffuse")->getHandler(), ImVec2((float)_windowWidth / 6, (float)_windowHeight / 6), ImVec2(0, 1), ImVec2(1, 0));
+				ImGui::SameLine();
+                ImGui::Image((ImTextureID)(uintptr_t)pFBO->getAttachment("gbuffer_specular")->getHandler(), ImVec2((float)_windowWidth / 6, (float)_windowHeight / 6), ImVec2(0, 1), ImVec2(1, 0));
+
+                ImGui::Separator();
+                ImGui::Checkbox("Enable Depth Copy", &bCopyDepth);
+
+
+                ImGui::EndTabItem();
+            }
+
             if (ImGui::BeginTabItem("Material"))
             {
                 ImGui::ColorEdit3("Emissive", glm::value_ptr(objects_[0]->color_));
@@ -453,6 +502,7 @@ void OG::Scene_Assignment2::DrawImGui(GLFWwindow* pWindow)
                     if (ImGui::Button("Scenario 2")) setScenario2(); ImGui::SameLine();
                     if (ImGui::Button("Scenario 3")) setScenario3();
 
+                    ImGui::Checkbox("Draw Orbit", &pOrbit->orbit_enabled);
                     ImGui::SliderFloat("Orbit Radius", &pOrbit->radius, 1.0f, 10.0f);
                     ImGui::SliderFloat("Rotation Speed", &rotation_speed, -3.0f, 3.0f);
                     ImGui::Checkbox("Rotate", &isRotating);
@@ -518,18 +568,17 @@ void OG::Scene_Assignment2::setFramebuffer()
 {
     pFBO->init(_windowWidth, _windowHeight);
 
-
     pFBO->bind();
 
-    std::unique_ptr<Texture> gbuffer_position = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 0);
-    std::unique_ptr<Texture> gbuffer_normal = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 1);
-    std::unique_ptr<Texture> gbuffer_material = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 2);
-    std::unique_ptr<Texture> gbuffer_depth = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA16F, 3);
+    std::unique_ptr<Texture> gbuffer_position = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA32F, 0);
+    std::unique_ptr<Texture> gbuffer_normal = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA32F, 1);
+    std::unique_ptr<Texture> gbuffer_diffuse = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA32F, 2);
+    std::unique_ptr<Texture> gbuffer_specular = std::make_unique<GBufferTexture>(_windowWidth, _windowHeight, GL_RGBA32F, 3);
 
     pFBO->setTextureAttachment("gbuffer_position", gbuffer_position);
     pFBO->setTextureAttachment("gbuffer_normal", gbuffer_normal);
-    pFBO->setTextureAttachment("gbuffer_material", gbuffer_material);
-    pFBO->setTextureAttachment("gbuffer_depth", gbuffer_depth);
+    pFBO->setTextureAttachment("gbuffer_diffuse", gbuffer_diffuse);
+    pFBO->setTextureAttachment("gbuffer_specular", gbuffer_specular);
 
 	/*
 	* OpenGL by default only renders to a framebuffer's first color attachment.
