@@ -43,6 +43,9 @@
     <Filter Include="Source Files\OG\buffers\Private">
       <UniqueIdentifier>{ea635582-5e2f-4550-9213-cbbf78a99c65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\OG\Intersection">
+      <UniqueIdentifier>{d3bd92bb-b6f4-4e5a-9ce9-6cea4d163a9b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OG\src\Graphics.cpp">
@@ -122,6 +125,9 @@
     </ClCompile>
     <ClCompile Include="OG\src\FBO.cpp">
       <Filter>Source Files\OG\buffers\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Intersection.cpp">
+      <Filter>Source Files\OG\Intersection</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -214,6 +220,9 @@
     </ClInclude>
     <ClInclude Include="OG\FBO.h">
       <Filter>Source Files\OG\buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Intersection.h">
+      <Filter>Source Files\OG\Intersection</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
